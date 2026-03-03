@@ -61,84 +61,80 @@ const scheduleData = {
 ```
 
 <Steps>
+  <Step title="Set program ID">
+    The `name` field should match a key in `programNames` and your music folder name.
+  </Step>
 
-<Step title="Set program ID">
-The `name` field should match a key in `programNames` and your music folder name.
-</Step>
+  <Step title="Set display name">
+    The `displayName` field appears in the schedule grid and player interface.
+  </Step>
 
-<Step title="Set display name">
-The `displayName` field appears in the schedule grid and player interface.
-</Step>
+  <Step title="Define time range">
+    Use 24-hour format for `start` and `end` times (e.g., "22:00" for 10 PM).
+  </Step>
 
-<Step title="Define time range">
-Use 24-hour format for `start` and `end` times (e.g., "22:00" for 10 PM).
-</Step>
-
-<Step title="Handle overnight shows">
-For programs that cross midnight (like "noche": "20:00" to "01:00"), the code automatically handles the day transition.
-</Step>
-
+  <Step title="Handle overnight shows">
+    For programs that cross midnight (like "noche": "20:00" to "01:00"), the code automatically handles the day transition.
+  </Step>
 </Steps>
 
 ## Adding a new program
 
 <Steps>
+  <Step title="Create music folder">
+    Create a new folder under `music/` with your program name:
 
-<Step title="Create music folder">
-Create a new folder under `music/` with your program name:
+    ```bash
+    mkdir music/mynewshow
+    ```
+  </Step>
 
-```bash
-mkdir music/mynewshow
-```
-</Step>
+  <Step title="Add to program names">
+    Add an entry to `programNames`:
 
-<Step title="Add to program names">
-Add an entry to `programNames`:
+    ```javascript
+    const programNames = {
+        // ... existing programs
+        "mynewshow": "My New Show"
+    };
+    ```
+  </Step>
 
-```javascript
-const programNames = {
-    // ... existing programs
-    "mynewshow": "My New Show"
-};
-```
-</Step>
+  <Step title="Add description">
+    Define the program description:
 
-<Step title="Add description">
-Define the program description:
+    ```javascript
+    const programDescriptions = {
+        // ... existing descriptions
+        "mynewshow": "An exciting new program with curated music."
+    };
+    ```
+  </Step>
 
-```javascript
-const programDescriptions = {
-    // ... existing descriptions
-    "mynewshow": "An exciting new program with curated music."
-};
-```
-</Step>
+  <Step title="Add to schedule">
+    Insert the schedule entry:
 
-<Step title="Add to schedule">
-Insert the schedule entry:
+    ```javascript
+    const scheduleData = {
+        "schedules": [
+            // ... existing schedules
+            {"name": "mynewshow", "displayName": "My New Show", "start": "14:00", "end": "18:00"}
+        ]
+    };
+    ```
+  </Step>
 
-```javascript
-const scheduleData = {
-    "schedules": [
-        // ... existing schedules
-        {"name": "mynewshow", "displayName": "My New Show", "start": "14:00", "end": "18:00"}
-    ]
-};
-```
-</Step>
+  <Step title="Add music files">
+    Copy MP3 or M4A files into `music/mynewshow/`.
+  </Step>
 
-<Step title="Add music files">
-Copy MP3 or M4A files into `music/mynewshow/`.
-</Step>
+  <Step title="Generate playlist">
+    Run the playlist generator:
 
-<Step title="Generate playlist">
-Run the playlist generator:
-
-```bash
-python3 playlist_generator.py
-```
-</Step>
-
+    ```bash
+    python3 playlist_generator.py
+    ```
+  </Step>
 </Steps>
 
 ## Station branding
@@ -232,19 +228,17 @@ Add or modify sponsor entries in index.html:166-186:
 ```
 
 <Steps>
+  <Step title="Add logo image">
+    Place the sponsor logo in the `sponsors/` folder (recommended size: 200x200px).
+  </Step>
 
-<Step title="Add logo image">
-Place the sponsor logo in the `sponsors/` folder (recommended size: 200x200px).
-</Step>
+  <Step title="Update link and name">
+    Set the sponsor URL and display name.
+  </Step>
 
-<Step title="Update link and name">
-Set the sponsor URL and display name.
-</Step>
-
-<Step title="Add sponsor block">
-Copy the entire `sponsor-item` div and modify for each sponsor.
-</Step>
-
+  <Step title="Add sponsor block">
+    Copy the entire `sponsor-item` div and modify for each sponsor.
+  </Step>
 </Steps>
 
 ## Footer links

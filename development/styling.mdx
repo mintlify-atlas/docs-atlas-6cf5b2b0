@@ -93,44 +93,42 @@ Found in styles.css:181-182.
 ## Customizing the color scheme
 
 <Steps>
+  <Step title="Choose your accent color">
+    Replace `#00FF37` (neon green) throughout the stylesheet with your brand color. You can use find-and-replace:
 
-<Step title="Choose your accent color">
-Replace `#00FF37` (neon green) throughout the stylesheet with your brand color. You can use find-and-replace:
+    ```css
+    /* Replace all instances of #00FF37 with your color */
+    #00FF37 → #FF0080  /* Example: Hot pink */
+    ```
+  </Step>
 
-```css
-/* Replace all instances of #00FF37 with your color */
-#00FF37 → #FF0080  /* Example: Hot pink */
-```
-</Step>
+  <Step title="Update hover states">
+    Adjust hover colors to complement your accent:
 
-<Step title="Update hover states">
-Adjust hover colors to complement your accent:
+    ```css
+    .play-button:hover {
+        background: #FF33A1;  /* Lighter version of your accent */
+    }
+    ```
+  </Step>
 
-```css
-.play-button:hover {
-    background: #FF33A1;  /* Lighter version of your accent */
-}
-```
-</Step>
+  <Step title="Customize backgrounds">
+    Change section background opacity or colors:
 
-<Step title="Customize backgrounds">
-Change section background opacity or colors:
+    ```css
+    .content-section {
+        background: rgba(15, 15, 15, 0.92);  /* Adjust opacity (0.0-1.0) */
+    }
+    ```
+  </Step>
 
-```css
-.content-section {
-    background: rgba(15, 15, 15, 0.92);  /* Adjust opacity (0.0-1.0) */
-}
-```
-</Step>
+  <Step title="Update text colors">
+    Modify text opacity for better contrast with your background:
 
-<Step title="Update text colors">
-Modify text opacity for better contrast with your background:
-
-```css
-color: rgba(255, 255, 255, 0.8);  /* Adjust alpha channel */
-```
-</Step>
-
+    ```css
+    color: rgba(255, 255, 255, 0.8);  /* Adjust alpha channel */
+    ```
+  </Step>
 </Steps>
 
 ## Typography
@@ -196,66 +194,62 @@ Found in styles.css:19.
 ### Replace Chomsky font
 
 <Steps>
+  <Step title="Add your font file">
+    Place your font file (OTF, TTF, or WOFF2) in the root directory:
 
-<Step title="Add your font file">
-Place your font file (OTF, TTF, or WOFF2) in the root directory:
+    ```
+    MyCustomFont.woff2
+    ```
+  </Step>
 
-```
-MyCustomFont.woff2
-```
-</Step>
+  <Step title="Update @font-face">
+    Modify the font declaration in styles.css:25-31:
 
-<Step title="Update @font-face">
-Modify the font declaration in styles.css:25-31:
+    ```css
+    @font-face {
+        font-family: 'MyCustomFont';
+        src: url('MyCustomFont.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+    ```
+  </Step>
 
-```css
-@font-face {
-    font-family: 'MyCustomFont';
-    src: url('MyCustomFont.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-```
-</Step>
+  <Step title="Update font-family references">
+    Replace 'Chomsky' with your font name:
 
-<Step title="Update font-family references">
-Replace 'Chomsky' with your font name:
-
-```css
-.station-logo,
-.hero-title {
-    font-family: 'MyCustomFont', serif;
-}
-```
-</Step>
-
+    ```css
+    .station-logo,
+    .hero-title {
+        font-family: 'MyCustomFont', serif;
+    }
+    ```
+  </Step>
 </Steps>
 
 ### Use Google Fonts
 
 <Steps>
+  <Step title="Add font link to HTML">
+    In index.html, add the Google Fonts link in the `<head>` section:
 
-<Step title="Add font link to HTML">
-In index.html, add the Google Fonts link in the `<head>` section:
+    ```html
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    ```
+  </Step>
 
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-```
-</Step>
+  <Step title="Update CSS font-family">
+    Replace Chomsky references:
 
-<Step title="Update CSS font-family">
-Replace Chomsky references:
-
-```css
-.hero-title {
-    font-family: 'Space Mono', monospace;
-}
-```
-</Step>
-
+    ```css
+    .hero-title {
+        font-family: 'Space Mono', monospace;
+    }
+    ```
+  </Step>
 </Steps>
 
 ## Background image

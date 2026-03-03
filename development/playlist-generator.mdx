@@ -149,60 +149,58 @@ The generated `playlist.json` file contains:
 ## Code walkthrough
 
 <Steps>
+  <Step title="Load configuration">
+    The script starts by loading `music/_programs.json` to get the list of programs and their folders:
 
-<Step title="Load configuration">
-The script starts by loading `music/_programs.json` to get the list of programs and their folders:
+    ```python
+    with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    ```
+  </Step>
 
-```python
-with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-    config = json.load(f)
-```
-</Step>
+  <Step title="Scan for audio files">
+    For each program, it searches for supported audio formats:
 
-<Step title="Scan for audio files">
-For each program, it searches for supported audio formats:
+    ```python
+    archivos_mp3 = []
+    for ext in ['*.mp3', '*.MP3', '*.m4a', '*.M4A']:
+        archivos_mp3.extend(carpeta.glob(ext))
+    ```
+  </Step>
 
-```python
-archivos_mp3 = []
-for ext in ['*.mp3', '*.MP3', '*.m4a', '*.M4A']:
-    archivos_mp3.extend(carpeta.glob(ext))
-```
-</Step>
+  <Step title="Extract metadata">
+    Each file is processed to extract duration and build track objects:
 
-<Step title="Extract metadata">
-Each file is processed to extract duration and build track objects:
+    ```python
+    for mp3 in archivos_mp3:
+        duracion = obtener_duracion_real(mp3)
+        tracks.append({
+            "file": mp3.name,
+            "duration": duracion,
+            "path": f"music/{programa['folder']}/{mp3.name}"
+        })
+        duracion_total += duracion
+    ```
+  </Step>
 
-```python
-for mp3 in archivos_mp3:
-    duracion = obtener_duracion_real(mp3)
-    tracks.append({
-        "file": mp3.name,
-        "duration": duracion,
-        "path": f"music/{programa['folder']}/{mp3.name}"
-    })
-    duracion_total += duracion
-```
-</Step>
+  <Step title="Shuffle with fixed seed">
+    Tracks are shuffled using a deterministic seed:
 
-<Step title="Shuffle with fixed seed">
-Tracks are shuffled using a deterministic seed:
+    ```python
+    random.seed(SEMILLA_FIJA + hash(programa["folder"]) % 1000)
+    random.shuffle(tracks)
+    ```
+  </Step>
 
-```python
-random.seed(SEMILLA_FIJA + hash(programa["folder"]) % 1000)
-random.shuffle(tracks)
-```
-</Step>
+  <Step title="Write playlist.json">
+    Finally, the playlist is saved to the program folder:
 
-<Step title="Write playlist.json">
-Finally, the playlist is saved to the program folder:
-
-```python
-output_path = carpeta / "playlist.json"
-with open(output_path, 'w', encoding='utf-8') as f:
-    json.dump(playlist_data, f, indent=2, ensure_ascii=False)
-```
-</Step>
-
+    ```python
+    output_path = carpeta / "playlist.json"
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(playlist_data, f, indent=2, ensure_ascii=False)
+    ```
+  </Step>
 </Steps>
 
 ## Customization

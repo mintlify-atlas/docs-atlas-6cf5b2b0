@@ -100,23 +100,21 @@ Each program folder should contain MP3 or M4A audio files. The playlist generato
 ## File organization best practices
 
 <Steps>
+  <Step title="Keep music organized by program">
+    Store audio files in their corresponding program folders under `music/`. This makes playlist generation automatic and schedule-aware.
+  </Step>
 
-<Step title="Keep music organized by program">
-Store audio files in their corresponding program folders under `music/`. This makes playlist generation automatic and schedule-aware.
-</Step>
+  <Step title="Use consistent naming">
+    Name audio files descriptively without special characters. Use lowercase and hyphens for consistency.
+  </Step>
 
-<Step title="Use consistent naming">
-Name audio files descriptively without special characters. Use lowercase and hyphens for consistency.
-</Step>
+  <Step title="Optimize assets">
+    Compress images and audio files before adding them to the project to reduce bandwidth and load times.
+  </Step>
 
-<Step title="Optimize assets">
-Compress images and audio files before adding them to the project to reduce bandwidth and load times.
-</Step>
-
-<Step title="Update playlists after changes">
-Run `playlist_generator.py` whenever you add or remove music files to regenerate the playlist.json files.
-</Step>
-
+  <Step title="Update playlists after changes">
+    Run `playlist_generator.py` whenever you add or remove music files to regenerate the playlist.json files.
+  </Step>
 </Steps>
 
 ## Static site deployment
