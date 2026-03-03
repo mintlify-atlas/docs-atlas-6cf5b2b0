@@ -1,0 +1,88 @@
+{
+  "projectType": "frontend",
+  "projectName": "Teletext Radio",
+  "projectDescription": "A synchronized 24/7 online radio streaming platform built with JavaScript, featuring scheduled programming and real-time audio playback.",
+  "theme": "almond",
+  "primaryColor": "#00FF37",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "installation"]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/audio-player",
+              "features/synchronized-streaming",
+              "features/schedule-management",
+              "features/playlist-system"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/project-structure",
+              "development/playlist-generator",
+              "development/customization",
+              "development/styling"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/hosting",
+              "deployment/configuration",
+              "deployment/external-platforms"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "JavaScript API",
+            "pages": [
+              "api/audio-player",
+              "api/schedule-functions",
+              "api/playlist-management"
+            ]
+          },
+          {
+            "group": "Data Structures",
+            "pages": [
+              "api/playlist-format",
+              "api/schedule-format"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Synchronized audio streaming - all listeners hear the same track at the same time",
+    "24/7 automated programming with time-based show scheduling",
+    "Web-based audio player with play/pause controls and share functionality",
+    "Python-based playlist generation tool for managing music collections",
+    "Responsive design with custom typography and visual branding",
+    "Support for external streaming platforms via PHP stream endpoint"
+  ],
+  "publicApiSurface": [
+    "loadPlaylist() - Load and parse playlist.json",
+    "playTransmisionExacta() - Synchronize playback to global timeline",
+    "getCurrentSchedule() - Get current programming schedule",
+    "calcularPosicionExacta() - Calculate exact track position for sync",
+    "updateDisplayInfo() - Update UI with current show information",
+    "generateScheduleCards() - Render schedule grid",
+    "getArgentinaTime() - Get timezone-adjusted time",
+    "formatTimeForDisplay() - Format time strings for display",
+    "playlist.json - Playlist data structure with tracks array",
+    "scheduleData - Schedule configuration with time slots and programs"
+  ]
+}
