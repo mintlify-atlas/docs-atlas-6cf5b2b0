@@ -1,0 +1,213 @@
+---
+title: Web hosting
+description: Deploy Teletext Radio to static web hosting platforms
+---
+
+Teletext Radio is designed as a static web application that can be hosted on any web server. The platform requires no backend database or server-side processing, making deployment straightforward.
+
+## Static site architecture
+
+The radio operates entirely in the browser using client-side JavaScript. All synchronization logic runs on the frontend, ensuring that every listener hears the same content at the same time.
+
+<Info>
+No server-side processing is required for the core radio functionality. The only optional backend component is `stream.php` for external platform integration.
+</Info>
+
+## Hosting requirements
+
+Your hosting platform needs to support:
+
+<Steps>
+  <Step title="Static file serving">
+    HTML, CSS, JavaScript, and audio files must be served over HTTP/HTTPS
+  </Step>
+  
+  <Step title="CORS headers">
+    Audio files require proper Cross-Origin Resource Sharing headers for playback
+  </Step>
+  
+  <Step title="MIME types">
+    The server must serve `.mp3` files with `Content-Type: audio/mpeg` header
+  </Step>
+  
+  <Step title="Custom domain support (optional)">
+    For custom domains, your hosting platform should support CNAME configuration
+  </Step>
+</Steps>
+
+## Recommended platforms
+
+### GitHub Pages
+
+GitHub Pages is ideal for Teletext Radio deployments:
+
+```bash
+# In your repository root
+git add .
+git commit -m "Deploy radio site"
+git push origin main
+```
+
+Enable GitHub Pages in your repository settings and select the branch to deploy.
+
+<Note>
+GitHub Pages automatically serves files with correct MIME types and supports custom domains via CNAME files.
+</Note>
+
+### Netlify
+
+Netlify provides automatic deployments from Git:
+
+1. Connect your repository to Netlify
+2. Set build command to empty (no build required)
+3. Set publish directory to `/` or your source directory
+4. Deploy
+
+### Vercel
+
+Vercel works similarly to Netlify:
+
+```bash
+npm i -g vercel
+vercel deploy
+```
+
+### Traditional web hosting
+
+For shared hosting or VPS:
+
+1. Upload all files via FTP/SFTP
+2. Ensure `.htaccess` is configured for proper MIME types
+3. Verify CORS headers are enabled
+
+## Custom domain setup
+
+Teletext Radio uses a CNAME file for custom domain configuration:
+
+```txt
+www.txtradio.site
+```
+
+<Steps>
+  <Step title="Create CNAME file">
+    Add a `CNAME` file in your repository root with your domain name (no protocol, no trailing slash)
+  </Step>
+  
+  <Step title="Configure DNS">
+    Add a CNAME record in your DNS settings pointing to your hosting provider's domain:
+    
+    - **GitHub Pages**: `your-username.github.io`
+    - **Netlify**: `your-site.netlify.app`
+    - **Vercel**: `your-site.vercel.app`
+  </Step>
+  
+  <Step title="Enable HTTPS">
+    Most platforms auto-provision SSL certificates. Enable "Enforce HTTPS" in your hosting settings.
+  </Step>
+</Steps>
+
+<Warning>
+DNS changes can take 24-48 hours to propagate globally. Your site may be temporarily unavailable during this period.
+</Warning>
+
+## File structure for deployment
+
+Your hosting root should contain:
+
+```
+/
+├── index.html
+├── radio-zara.js
+├── styles.css
+├── playlist.json
+├── CNAME
+├── favicon.png
+├── Chomsky.otf
+├── music/
+│   ├── madrugada/
+│   ├── mañana/
+│   ├── tarde/
+│   ├── mediatarde/
+│   ├── noche/
+│   └── especialestxt/
+└── stream.php (optional)
+```
+
+## Audio file considerations
+
+<Warning>
+Audio files can be large. Ensure your hosting plan supports adequate bandwidth for streaming. Each listener will download ~128 Kbps continuously.
+</Warning>
+
+### Bandwidth estimation
+
+For a 128 Kbps stream:
+
+- **Per listener per hour**: ~57 MB
+- **100 listeners for 24 hours**: ~137 GB
+- **1000 listeners for 24 hours**: ~1.37 TB
+
+Consider using a CDN or dedicated media hosting if you expect high traffic.
+
+## Deployment checklist
+
+<Steps>
+  <Step title="Verify all files are present">
+    Ensure `index.html`, JavaScript, CSS, audio files, and `playlist.json` are in place
+  </Step>
+  
+  <Step title="Test audio playback locally">
+    Open `index.html` in a browser and verify playback works
+  </Step>
+  
+  <Step title="Upload to hosting">
+    Deploy via Git, FTP, or your hosting platform's deployment method
+  </Step>
+  
+  <Step title="Configure custom domain (optional)">
+    Add CNAME file and configure DNS records
+  </Step>
+  
+  <Step title="Test on production">
+    Verify radio plays correctly on the live site
+  </Step>
+  
+  <Step title="Test synchronization">
+    Open the site in multiple browsers/devices and confirm all hear the same content
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Audio files won't load
+
+Check that your server sends proper headers:
+
+```http
+Content-Type: audio/mpeg
+Access-Control-Allow-Origin: *
+```
+
+### Synchronization issues
+
+Verify the server time is accurate. The synchronization logic in `radio-zara.js:141-159` depends on accurate system time:
+
+```javascript
+const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+const ahora = new Date();
+const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
+```
+
+### Custom domain not working
+
+Ensure your CNAME file contains only the domain name:
+
+```txt
+www.txtradio.site
+```
+
+Not:
+
+```txt
+https://www.txtradio.site/
+```

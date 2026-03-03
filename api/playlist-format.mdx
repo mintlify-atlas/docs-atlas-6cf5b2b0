@@ -1,0 +1,119 @@
+---
+title: Playlist format
+description: Structure and format of the playlist.json file that defines the radio station's music library
+---
+
+The `playlist.json` file contains the complete music library used by Teletext Radio. It defines all available tracks that can be played during the synchronized broadcast.
+
+## File structure
+
+The playlist file is a JSON object with a single top-level property:
+
+```json
+{
+  "tracks": [
+    "music/andresnewforu.mp3",
+    "music/archivotxt/anaoxacontrolo.mp3",
+    "music/archivotxt/bizarretriangule.mp3",
+    ...
+  ]
+}
+```
+
+## Properties
+
+<ResponseField name="tracks" type="string[]" required>
+  Array of file paths to audio tracks. Each path is relative to the web root and points to an MP3 file in the music directory structure.
+</ResponseField>
+
+## Track path format
+
+Each track in the array is a string representing a file path:
+
+- **Format**: `"music/[subdirectory/]filename.mp3"`
+- **Type**: Relative file path
+- **Extension**: `.mp3`
+
+### Example paths
+
+```json
+"music/andresnewforu.mp3"                        // Root level
+"music/archivotxt/anaoxacontrolo.mp3"            // In subdirectory
+"music/internetarchive/Sound Synthesis -- Welcome to the Future.mp3"  // With spaces
+```
+
+## Track object in memory
+
+When the playlist is loaded by the radio player (`radio-zara.js`), each track string is transformed into an object:
+
+```javascript
+{
+  path: "music/archivotxt/anaoxacontrolo.mp3",
+  file: "anaoxacontrolo.mp3"
+}
+```
+
+<ResponseField name="path" type="string">
+  The full relative path to the audio file, as stored in `playlist.json`.
+</ResponseField>
+
+<ResponseField name="file" type="string">
+  The filename extracted from the path (everything after the last `/`).
+</ResponseField>
+
+## Implementation
+
+The playlist is loaded asynchronously in `radio-zara.js:115-136`:
+
+```javascript
+async function loadPlaylist() {
+    if (playlistLoaded) return;
+    
+    try {
+        const response = await fetch('playlist.json');
+        const data = await response.json();
+        
+        currentPlaylist = data.tracks.map(track => ({
+            path: track,
+            file: track.split('/').pop()
+        }));
+        
+        playlistLoaded = true;
+        console.log(`📻 Playlist cargada: ${currentPlaylist.length} canciones`);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        currentPlaylist = [];
+        currentTrackIndex = 0;
+    }
+}
+```
+
+## Complete example
+
+Here's a partial example from the actual `playlist.json`:
+
+```json
+{
+  "tracks": [
+    "music/andresnewforu.mp3",
+    "music/archivotxt/anaoxacontrolo.mp3",
+    "music/archivotxt/bizarretriangule.mp3",
+    "music/archivotxt/bluelovemix.mp3",
+    "music/aribaldpeachystreets.mp3",
+    "music/as2.mp3",
+    "music/automatnematod.mp3",
+    "music/belgicalanuevaflor.mp3",
+    "music/especialestxt/808statepacific.mp3",
+    "music/internetarchive/Sound Synthesis -- Welcome to the Future.mp3"
+  ]
+}
+```
+
+## Notes
+
+- The playlist contains 127 tracks in total
+- Tracks are organized into subdirectories like `archivotxt/`, `especialestxt/`, `internetarchive/`, and `teletext/`
+- File paths may contain spaces in the filename
+- All tracks must be in MP3 format
+- The order in `playlist.json` determines playback sequence during synchronization

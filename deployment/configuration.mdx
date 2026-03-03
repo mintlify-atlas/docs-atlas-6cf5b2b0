@@ -1,0 +1,275 @@
+---
+title: Configuration
+description: Environment and runtime configuration for Teletext Radio
+---
+
+Teletext Radio's configuration is primarily managed through JavaScript constants and JSON files. There are no environment variables or build-time configuration required.
+
+## Core configuration files
+
+### playlist.json
+
+The `playlist.json` file defines the audio tracks for each program:
+
+```json
+{
+  "tracks": [
+    "/music/madrugada/track1.mp3",
+    "/music/madrugada/track2.mp3",
+    "/music/mañana/track1.mp3"
+  ]
+}
+```
+
+<Info>
+The playlist is loaded dynamically by `radio-zara.js` at runtime. You can update it without redeploying the entire site.
+</Info>
+
+### Schedule configuration
+
+Program schedules are defined in `radio-zara.js:21-48`. Edit this section to customize programming:
+
+```javascript
+const programNames = {
+    "madrugada": "Radio 404",
+    "mañana": "Archivo txt", 
+    "tarde": "Telesoft",
+    "mediatarde": "Floppy Disk",
+    "noche": "Internet Archive",
+    "especial": "Especiales txt"
+};
+
+const scheduleData = {
+    "schedules": [
+        {"name": "madrugada", "displayName": "Radio 404", "start": "01:00", "end": "06:00"},
+        {"name": "mañana", "displayName": "Archivo txt", "start": "06:00", "end": "12:00"},
+        {"name": "tarde", "displayName": "Telesoft", "start": "12:00", "end": "16:00"},
+        {"name": "mediatarde", "displayName": "Floppy Disk", "start": "16:00", "end": "20:00"},
+        {"name": "noche", "displayName": "Internet Archive", "start": "20:00", "end": "01:00"},
+        {"name": "especial", "displayName": "Especiales txt", "start": "22:00", "end": "00:00"}
+    ]
+};
+```
+
+<Steps>
+  <Step title="Edit program names">
+    Modify the `programNames` object to change display names
+  </Step>
+  
+  <Step title="Update time slots">
+    Adjust `start` and `end` times in `scheduleData.schedules`
+  </Step>
+  
+  <Step title="Add descriptions">
+    Update `programDescriptions` object for schedule cards
+  </Step>
+</Steps>
+
+## Synchronization settings
+
+The synchronization mechanism is configured in `radio-zara.js:138-160`:
+
+```javascript
+function calcularPosicionExacta() {
+    const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+    const ahora = new Date();
+    
+    const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
+    const segundosPorCancion = 180; // 3 minutes per track
+    const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
+    const posicionEnPlaylist = segundosTranscurridos % segundosTotalPlaylist;
+    
+    currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
+    const segundoEnCancion = posicionEnPlaylist % segundosPorCancion;
+    
+    return {
+        trackIndex: currentTrackIndex,
+        segundoEnCancion: segundoEnCancion,
+        track: currentPlaylist[currentTrackIndex]
+    };
+}
+```
+
+### Key synchronization parameters
+
+<Note>
+**`inicioTransmision`** - The reference timestamp for synchronization. All clients calculate their position relative to this moment.
+</Note>
+
+<Note>
+**`segundosPorCancion`** - Duration of each track in seconds (default: 180 = 3 minutes). Adjust if your tracks have different lengths.
+</Note>
+
+### Adjusting sync for different track lengths
+
+If your tracks vary in length, you'll need to modify the synchronization logic:
+
+```javascript
+// Example: Variable track lengths
+const trackDurations = [180, 240, 195, 210]; // seconds
+
+let totalSeconds = 0;
+for (let i = 0; i < trackDurations.length; i++) {
+    if (segundosTranscurridos < totalSeconds + trackDurations[i]) {
+        currentTrackIndex = i;
+        segundoEnCancion = segundosTranscurridos - totalSeconds;
+        break;
+    }
+    totalSeconds += trackDurations[i];
+}
+```
+
+<Warning>
+Changing the synchronization reference timestamp (`inicioTransmision`) will cause all listeners to jump to different positions in the playlist.
+</Warning>
+
+## Timezone configuration
+
+The radio operates on Argentina time (UTC-3). This is configured in `radio-zara.js:52-58`:
+
+```javascript
+function getArgentinaTime() {
+    const now = new Date();
+    const argentinaOffset = -3 * 60; // UTC-3 in minutes
+    const localOffset = now.getTimezoneOffset();
+    const offsetDiff = argentinaOffset + localOffset;
+    return new Date(now.getTime() + offsetDiff * 60000);
+}
+```
+
+To use a different timezone:
+
+```javascript
+// Example: UTC+2 (e.g., CEST)
+const timezoneOffset = 2 * 60; // UTC+2 in minutes
+```
+
+## Mode switching: Playlist vs Live
+
+Teletext Radio supports two modes defined in `index.html:199-204`:
+
+```html
+<!-- MODO NORMAL (playlist) - USÁ ESTE CUANDO NO TRANSMITÍS -->
+<script src="radio-zara.js"></script>
+
+<!-- MODO EN VIVO (BUTT) - USÁ ESTE CUANDO TRANSMITÍS -->
+<!-- <script src="radio-zara-live.js"></script>-->
+```
+
+<Steps>
+  <Step title="Playlist mode (default)">
+    Uses `radio-zara.js` for synchronized playback of pre-recorded tracks
+  </Step>
+  
+  <Step title="Live mode">
+    Uses `radio-zara-live.js` to connect to a live stream (e.g., from BUTT - Broadcast Using This Tool)
+  </Step>
+</Steps>
+
+Switch between modes by commenting/uncommenting the appropriate script tag.
+
+## Analytics configuration
+
+Google Analytics is configured in `index.html:25-32`:
+
+```html
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-N8V6SL88SY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-N8V6SL88SY');
+</script>
+```
+
+Replace `G-N8V6SL88SY` with your Google Analytics measurement ID.
+
+## Meta tags and social sharing
+
+Configure social media previews in `index.html:10-24`:
+
+```html
+<meta property="og:url" content="https://www.txtradio.site/">
+<meta property="og:title" content="Teletext Radio">
+<meta property="og:description" content="Patagonia Argentina">
+<meta property="og:image" content="https://www.txtradio.site/social-preview.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@teletextlab">
+```
+
+Update these values to match your deployment:
+
+<Steps>
+  <Step title="Update URLs">
+    Change `og:url` and `og:image` to your domain
+  </Step>
+  
+  <Step title="Customize text">
+    Modify `og:title`, `og:description`, and Twitter metadata
+  </Step>
+  
+  <Step title="Add social preview image">
+    Create a 1200×630px image and place it in your root directory
+  </Step>
+</Steps>
+
+## Error handling configuration
+
+The player includes error recovery logic in `radio-zara.js:18-19`:
+
+```javascript
+let errorCount = 0;
+const MAX_ERRORS = 3;
+```
+
+The player will attempt to skip to the next track up to 3 times before stopping playback. Adjust `MAX_ERRORS` to change this threshold.
+
+## CORS and streaming headers
+
+For audio streaming to work correctly, your server must send these headers:
+
+```http
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Cache-Control: no-cache, no-store, must-revalidate
+```
+
+These are automatically configured if using `stream.php`. For static hosting, configure your server:
+
+### Apache (.htaccess)
+
+```apache
+<FilesMatch "\.(mp3|ogg|wav)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Expose-Headers "*"
+</FilesMatch>
+```
+
+### Nginx
+
+```nginx
+location ~* \.(mp3|ogg|wav)$ {
+    add_header Access-Control-Allow-Origin *;
+    add_header Access-Control-Expose-Headers *;
+}
+```
+
+## Platform-specific configuration
+
+The JavaScript includes platform detection for external radio aggregators in `radio-zara.js:172-178`:
+
+```javascript
+if (window.location.hostname.includes('mytuner-radio.com') || 
+    window.location.hostname.includes('radios-argentinas.org')) {
+    console.log('🔧 PLATAFORMA EXTERNA DETECTADA - Forzando sincronización');
+    audioPlayer.currentTime = posicion.segundoEnCancion;
+    audioPlayer.src = track.path + '?t=' + Date.now();
+}
+```
+
+This ensures synchronization works even when embedded in external platforms.
+
+<Info>
+Add additional platform hostnames to this condition if you integrate with other radio directories.
+</Info>

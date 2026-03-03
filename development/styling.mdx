@@ -1,0 +1,503 @@
+---
+title: Styling
+description: How to customize CSS, fonts, colors, and visual design
+---
+
+Teletext Radio's visual design is controlled entirely through `styles.css`. You can customize colors, fonts, layouts, and animations to match your station's brand.
+
+## Color scheme
+
+The design uses a dark theme with accent colors. Key color variables are defined throughout `styles.css`.
+
+### Primary colors
+
+**Neon green accent** - Used for branding, highlights, and interactive elements:
+
+```css
+/* Primary accent color */
+color: #00FF37;
+background: #00FF37;
+border-color: #00FF37;
+```
+
+Found in styles.css:61, 105, 179, 213, 464, and more.
+
+**Alternative green** - Hover states:
+
+```css
+background: #39ff14;  /* Brighter green on hover */
+```
+
+Found in styles.css:119.
+
+### Background colors
+
+**Main background** - Dark background with image overlay:
+
+```css
+body {
+    background-image: url('ff.jpg');
+    background-color: #000;
+}
+```
+
+Found in styles.css:13-16.
+
+**Section backgrounds** - Semi-transparent overlays:
+
+```css
+/* Dark overlay */
+background: rgba(10, 10, 10, 0.95);    /* Fixed player */
+background: rgba(15, 15, 15, 0.92);    /* Content sections */
+background: rgba(20, 20, 20, 0.92);    /* Alternating sections */
+```
+
+Found in styles.css:39, 197, index.html:80, 121.
+
+### Text colors
+
+```css
+/* Primary text */
+color: #ffffff;
+
+/* Secondary text */
+color: rgba(255, 255, 255, 0.9);
+color: rgba(255, 255, 255, 0.8);
+color: rgba(255, 255, 255, 0.7);
+
+/* Muted text */
+color: rgba(255, 255, 255, 0.6);
+color: rgba(255, 255, 255, 0.5);
+color: rgba(255, 255, 255, 0.4);
+```
+
+### Accent colors
+
+**Live indicator** - Red pulsing dot:
+
+```css
+background: #ff0000;
+```
+
+Found in styles.css:78.
+
+**Blue shadow** - Text shadow effect:
+
+```css
+text-shadow: 3px 3px 0 #002FFF,
+             6px 6px 0 rgba(0, 47, 255, 0.4);
+```
+
+Found in styles.css:181-182.
+
+## Customizing the color scheme
+
+<Steps>
+
+<Step title="Choose your accent color">
+Replace `#00FF37` (neon green) throughout the stylesheet with your brand color. You can use find-and-replace:
+
+```css
+/* Replace all instances of #00FF37 with your color */
+#00FF37 → #FF0080  /* Example: Hot pink */
+```
+</Step>
+
+<Step title="Update hover states">
+Adjust hover colors to complement your accent:
+
+```css
+.play-button:hover {
+    background: #FF33A1;  /* Lighter version of your accent */
+}
+```
+</Step>
+
+<Step title="Customize backgrounds">
+Change section background opacity or colors:
+
+```css
+.content-section {
+    background: rgba(15, 15, 15, 0.92);  /* Adjust opacity (0.0-1.0) */
+}
+```
+</Step>
+
+<Step title="Update text colors">
+Modify text opacity for better contrast with your background:
+
+```css
+color: rgba(255, 255, 255, 0.8);  /* Adjust alpha channel */
+```
+</Step>
+
+</Steps>
+
+## Typography
+
+### Chomsky font
+
+The signature teletext-style font is loaded via `@font-face` in styles.css:25-31:
+
+```css
+@font-face {
+    font-family: 'Chomsky';
+    src: url('Chomsky.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+```
+
+**Usage:**
+
+```css
+.station-logo {
+    font-family: 'Chomsky', serif;
+    font-size: 1.8rem;
+}
+
+.hero-title {
+    font-family: 'Chomsky', serif;
+    font-size: 5rem;
+}
+```
+
+Found in styles.css:59, 177.
+
+<Note>
+The Chomsky font file (`Chomsky.otf`) must be in the root directory. You can replace it with any OTF or TTF font file by updating the `src` URL.
+</Note>
+
+### System fonts
+
+Body text uses a sans-serif stack:
+
+```css
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+```
+
+Found in styles.css:19.
+
+### Font sizes
+
+**Hero title:** 5rem desktop, 3.5rem tablet, 2.8rem mobile (styles.css:178, 626, 691)
+
+**Section titles:** 2.5rem desktop, 2rem mobile (styles.css:204, 638)
+
+**Body text:** 1.1rem (styles.css:439)
+
+**Small text:** 0.85rem-0.95rem (styles.css:70, 292, 509)
+
+## Customizing fonts
+
+### Replace Chomsky font
+
+<Steps>
+
+<Step title="Add your font file">
+Place your font file (OTF, TTF, or WOFF2) in the root directory:
+
+```
+MyCustomFont.woff2
+```
+</Step>
+
+<Step title="Update @font-face">
+Modify the font declaration in styles.css:25-31:
+
+```css
+@font-face {
+    font-family: 'MyCustomFont';
+    src: url('MyCustomFont.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+```
+</Step>
+
+<Step title="Update font-family references">
+Replace 'Chomsky' with your font name:
+
+```css
+.station-logo,
+.hero-title {
+    font-family: 'MyCustomFont', serif;
+}
+```
+</Step>
+
+</Steps>
+
+### Use Google Fonts
+
+<Steps>
+
+<Step title="Add font link to HTML">
+In index.html, add the Google Fonts link in the `<head>` section:
+
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+```
+</Step>
+
+<Step title="Update CSS font-family">
+Replace Chomsky references:
+
+```css
+.hero-title {
+    font-family: 'Space Mono', monospace;
+}
+```
+</Step>
+
+</Steps>
+
+## Background image
+
+The background is set in styles.css:13-17:
+
+```css
+body {
+    background-image: url('ff.jpg');
+    background-size: cover;
+    background-position: center;
+    background-color: #000;
+    background-attachment: fixed;
+}
+```
+
+**To change the background:**
+
+1. Replace `ff.jpg` with your image file
+2. Update the URL in styles.css:13
+
+**To remove the background image:**
+
+```css
+body {
+    /* background-image: url('ff.jpg'); */
+    background-color: #000;  /* Solid color instead */
+}
+```
+
+**To add a gradient overlay:**
+
+```css
+.hero-section::before {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.5));
+}
+```
+
+## Player styling
+
+### Fixed player bar
+
+The top player bar styling in styles.css:34-49:
+
+```css
+.fixed-player {
+    position: fixed;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    height: 60px;
+}
+```
+
+### Play button
+
+The circular play/pause button in styles.css:104-121:
+
+```css
+.play-button {
+    background: #00FF37;  /* Accent color */
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;  /* Circular */
+    color: #000;  /* Icon color */
+}
+
+.play-button:hover {
+    background: #39ff14;  /* Hover state */
+    transform: scale(1.05);  /* Grow on hover */
+}
+```
+
+### Live indicator
+
+The pulsing red dot in styles.css:75-87:
+
+```css
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff0000;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+```
+
+## Card and section styling
+
+### Schedule cards
+
+```css
+.schedule-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.schedule-card:hover {
+    border-color: rgba(0, 255, 55, 0.3);  /* Green border on hover */
+    background: rgba(255, 255, 255, 0.05);  /* Lighter background */
+    transform: translateY(-5px);  /* Lift effect */
+}
+```
+
+Found in styles.css:264-276.
+
+### News cards
+
+Similar styling for novedades (news) cards in styles.css:310-326:
+
+```css
+.novedad-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.novedad-card:hover {
+    border-color: rgba(0, 255, 55, 0.4);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+```
+
+## Responsive design
+
+The stylesheet includes mobile breakpoints:
+
+**Tablet (≤768px)** - styles.css:610-688
+
+```css
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 3.5rem;
+    }
+    .schedule-grid,
+    .novedades-grid {
+        grid-template-columns: 1fr;  /* Single column */
+    }
+}
+```
+
+**Mobile (≤480px)** - styles.css:690-729
+
+```css
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 2.8rem;
+    }
+    .current-show {
+        display: none;  /* Hide on small screens */
+    }
+}
+```
+
+## Animations
+
+### Pulse animation
+
+Used for the live indicator in styles.css:83-87:
+
+```css
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+```
+
+### Hover animations
+
+Cards and buttons use CSS transitions:
+
+```css
+transition: all 0.3s ease;
+transition: transform 0.5s ease;
+```
+
+### Special loading animation
+
+Green pulse when radio is starting in styles.css:732-740:
+
+```css
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 55, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 255, 55, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 55, 0); }
+}
+
+.radio-iniciando .play-button {
+    animation: pulse-green 1s infinite;
+}
+```
+
+## Quick customization reference
+
+<CodeGroup>
+
+```css Change accent color
+/* Find and replace #00FF37 with your color */
+#00FF37 → #FF6B35  /* Orange */
+#00FF37 → #00D9FF  /* Cyan */
+#00FF37 → #FF0080  /* Pink */
+```
+
+```css Adjust transparency
+/* Make sections more/less opaque */
+background: rgba(15, 15, 15, 0.95);  /* More opaque */
+background: rgba(15, 15, 15, 0.80);  /* More transparent */
+```
+
+```css Change fonts
+/* Replace Chomsky */
+@font-face {
+    font-family: 'YourFont';
+    src: url('YourFont.woff2') format('woff2');
+}
+
+.hero-title {
+    font-family: 'YourFont', serif;
+}
+```
+
+```css Customize card hover
+.schedule-card:hover {
+    border-color: #YOUR_COLOR;
+    transform: translateY(-5px) scale(1.02);  /* Lift and grow */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);  /* Deeper shadow */
+}
+```
+
+</CodeGroup>
+
+<Warning>
+When changing colors, ensure sufficient contrast between text and backgrounds for accessibility. Use tools like WebAIM Contrast Checker to verify readability.
+</Warning>

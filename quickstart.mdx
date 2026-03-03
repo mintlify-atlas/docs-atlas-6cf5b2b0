@@ -1,80 +1,365 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get Teletext Radio up and running in under 5 minutes
 ---
 
-## Get started in three steps
+# Quick start
 
-Get your documentation site running locally and make your first customization.
+Get your synchronized radio streaming in under 5 minutes. This guide will help you set up the essential files and start broadcasting.
 
-### Step 1: Set up your local environment
+## Prerequisites
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+Before you begin, make sure you have:
 
-### Step 2: Deploy your changes
+- A web server (Apache, Nginx, or local development server)
+- Audio files in MP3 format
+- Basic knowledge of HTML and JavaScript
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Note>
+You can use Python's built-in server for local testing: `python3 -m http.server 8000`
+</Note>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Quick setup
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Create the HTML structure">
+    Create an `index.html` file with the radio player interface:
 
-### Step 3: Go live
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="styles.css">
+        <title>Teletext Radio</title>
+    </head>
+    <body>
+        <div class="fixed-player">
+            <div class="player-left">
+                <a href="#" class="station-logo">TXT</a>
+                <div class="live-status">
+                    <span class="live-dot"></span>
+                    <span class="live-text">EN VIVO</span>
+                </div>
+                <div class="current-show" id="currentShow">Loading...</div>
+            </div>
+            
+            <div class="player-center">
+                <button class="play-button" id="radioPlayButton" aria-label="Play/Pause">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path id="playPath" d="M5 4L15 10L5 16V4Z"/>
+                        <path id="pausePath1" d="M5 4H9V16H5V4Z" opacity="0"/>
+                        <path id="pausePath2" d="M11 4H15V16H11V4Z" opacity="0"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+        <audio id="radioPlayer"></audio>
+        <script src="radio-zara.js"></script>
+    </body>
+    </html>
+    ```
+  </Step>
+
+  <Step title="Set up the playlist">
+    Create a `playlist.json` file with your audio tracks:
+
+    ```json
+    { "tracks": [
+      "music/track1.mp3",
+      "music/track2.mp3",
+      "music/track3.mp3"
+    ] }
+    ```
+
+    <Note>
+    Make sure your audio files are accessible relative to the HTML file. Create a `music/` directory and add your MP3 files there.
+    </Note>
+  </Step>
+
+  <Step title="Add the radio script">
+    Create `radio-zara.js` with the core synchronization logic:
+
+    ```javascript
+    document.addEventListener('DOMContentLoaded', function() {
+        const playButton = document.getElementById('radioPlayButton');
+        let audioPlayer = document.getElementById('radioPlayer');
+        const playPath = document.getElementById('playPath');
+        const pausePath1 = document.getElementById('pausePath1');
+        const pausePath2 = document.getElementById('pausePath2');
+        
+        let isPlaying = false;
+        let currentPlaylist = [];
+        let currentTrackIndex = 0;
+        let playlistLoaded = false;
+
+        // Load playlist from JSON
+        async function loadPlaylist() {
+            if (playlistLoaded) return;
+            
+            try {
+                console.log('📻 Loading playlist...');
+                const response = await fetch('playlist.json');
+                const data = await response.json();
+                
+                currentPlaylist = data.tracks.map(track => ({
+                    path: track,
+                    file: track.split('/').pop()
+                }));
+                
+                playlistLoaded = true;
+                console.log(`📻 Playlist loaded: ${currentPlaylist.length} tracks`);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                currentPlaylist = [];
+                currentTrackIndex = 0;
+            }
+        }
+
+        // Calculate exact synchronized position
+        function calcularPosicionExacta() {
+            const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+            const ahora = new Date();
+            
+            const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
+            const segundosPorCancion = 180; // 3 minutes per track
+            const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
+            const posicionEnPlaylist = segundosTranscurridos % segundosTotalPlaylist;
+            
+            currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
+            const segundoEnCancion = posicionEnPlaylist % segundosPorCancion;
+            
+            return {
+                trackIndex: currentTrackIndex,
+                segundoEnCancion: segundoEnCancion,
+                track: currentPlaylist[currentTrackIndex]
+            };
+        }
+
+        // Play synchronized transmission
+        function playTransmisionExacta() {
+            if (currentPlaylist.length === 0) return;
+            
+            const posicion = calcularPosicionExacta();
+            const track = posicion.track;
+            
+            console.log(`🎵 Playing: "${track.file}"`);
+            console.log(`🎯 Starting at second: ${posicion.segundoEnCancion}`);
+            
+            audioPlayer.src = track.path;
+            audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600);
+            
+            audioPlayer.play().catch(e => {
+                console.error('Playback error:', e);
+            });
+            
+            audioPlayer.onended = function() {
+                siguienteCancion();
+            };
+        }
+
+        // Next track
+        function siguienteCancion() {
+            if (currentPlaylist.length === 0) return;
+            
+            currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+            const track = currentPlaylist[currentTrackIndex];
+            
+            audioPlayer.src = track.path;
+            audioPlayer.currentTime = 0;
+            
+            if (isPlaying) {
+                audioPlayer.play();
+            }
+            
+            audioPlayer.onended = function() {
+                siguienteCancion();
+            };
+        }
+
+        // Update play button state
+        function updatePlayButton() {
+            playPath.setAttribute('opacity', isPlaying ? '0' : '1');
+            pausePath1.setAttribute('opacity', isPlaying ? '1' : '0');
+            pausePath2.setAttribute('opacity', isPlaying ? '1' : '0');
+        }
+
+        // Play/Pause event
+        playButton.addEventListener('click', async function() {
+            if (isPlaying) {
+                audioPlayer.pause();
+                isPlaying = false;
+                console.log('⏸️ Paused');
+            } else {
+                if (!playlistLoaded) {
+                    await loadPlaylist();
+                }
+                isPlaying = true;
+                console.log('▶️ Starting synchronized transmission...');
+                
+                playTransmisionExacta();
+            }
+            updatePlayButton();
+        });
+
+        // Initialize
+        loadPlaylist();
+        console.log('✅ Radio ready');
+    });
+    ```
+  </Step>
+
+  <Step title="Add basic styling">
+    Create a minimal `styles.css` for the player:
+
+    ```css
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #000;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+    }
+
+    .fixed-player {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 1000;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 60px;
+    }
+
+    .player-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .station-logo {
+        font-size: 1.8rem;
+        color: #00FF37;
+        text-decoration: none;
+        letter-spacing: 1px;
+        font-weight: bold;
+    }
+
+    .live-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+    }
+
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background: #ff0000;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    .play-button {
+        background: #00FF37;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #000;
+        transition: all 0.2s ease;
+    }
+
+    .play-button:hover {
+        background: #39ff14;
+        transform: scale(1.05);
+    }
+
+    #radioPlayer {
+        display: none;
+    }
+    ```
+  </Step>
+
+  <Step title="Test your radio">
+    Start a local server and open your radio in a browser:
+
+    ```bash
+    python3 -m http.server 8000
+    ```
+
+    Open `http://localhost:8000` in your browser and click the play button. You should see console logs showing the synchronized playback.
+
+    <Note>
+    Open the same URL in multiple browser windows to verify that all instances are perfectly synchronized!
+    </Note>
+  </Step>
+</Steps>
+
+## Verify synchronization
+
+To test that synchronization is working:
+
+1. Open your radio in two different browser tabs
+2. Click play in both tabs at slightly different times
+3. Both players should jump to the same position in the same track
+4. All listeners hear exactly the same content at the same time
+
+<CodeGroup>
+```bash Terminal 1
+# Start first browser instance
+open http://localhost:8000
+```
+
+```bash Terminal 2
+# Start second browser instance
+open http://localhost:8000
+```
+</CodeGroup>
+
+## What you've built
+
+You now have a working synchronized radio with:
+
+- Time-synchronized playback across all listeners
+- Automatic track progression
+- Clean player interface
+- Playlist-based content management
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Installation guide" icon="book" href="/installation">
+    Learn about advanced configuration and customization options
+  </Card>
+  <Card title="Add schedule system" icon="calendar">
+    Implement the daily programming schedule feature
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+<Warning>
+Remember to only use audio content that you have proper licenses for. This platform is designed for appropriately licensed content or public domain material.
+</Warning>

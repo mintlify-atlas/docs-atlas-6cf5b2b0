@@ -1,0 +1,168 @@
+---
+title: Synchronized streaming
+description: Understand how Teletext Radio keeps all listeners perfectly synchronized using time-based playback
+---
+
+Teletext Radio uses a time-based synchronization algorithm to ensure all listeners hear the exact same audio at the same time, creating a shared listening experience across all connected users.
+
+## How synchronization works
+
+The synchronization system calculates which track should be playing and at what position based on a fixed start time, ensuring all listeners are synchronized regardless of when they join.
+
+### The synchronization algorithm
+
+The core synchronization logic is in the `calcularPosicionExacta()` function from `radio-zara.js:138-160`:
+
+```javascript
+function calcularPosicionExacta() {
+    const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+    const ahora = new Date();
+    
+    const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
+    const segundosPorCancion = 180;
+    const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
+    const posicionEnPlaylist = segundosTranscurridos % segundosTotalPlaylist;
+    
+    currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
+    const segundoEnCancion = posicionEnPlaylist % segundosPorCancion;
+    
+    console.log('🎯 SINCRONIZACIÓN EXACTA:');
+    console.log(`   📻 Canción: #${currentTrackIndex + 1}/${currentPlaylist.length}`);
+    console.log(`   ⏱️  Segundo: ${segundoEnCancion}s`);
+    console.log(`   🔗 Todos escuchan lo mismo`);
+    
+    return {
+        trackIndex: currentTrackIndex,
+        segundoEnCancion: segundoEnCancion,
+        track: currentPlaylist[currentTrackIndex]
+    };
+}
+```
+
+<Info>
+The transmission start time (`2025-01-01T03:00:00Z`) is a fixed reference point. All playback positions are calculated from this timestamp.
+</Info>
+
+## Synchronization steps
+
+The algorithm follows these steps:
+
+1. **Calculate elapsed time**: Get the total seconds since transmission start
+2. **Calculate playlist position**: Use modulo to find position within the repeating playlist
+3. **Determine track index**: Divide by seconds-per-song to get the track number
+4. **Calculate in-track position**: Use modulo again to find the position within the current track
+
+### Key parameters
+
+- **Track duration**: 180 seconds (3 minutes) per track
+- **Playlist loop**: The entire playlist repeats continuously
+- **Start reference**: Fixed UTC timestamp for consistent calculations
+
+## Playing synchronized audio
+
+The `playTransmisionExacta()` function from `radio-zara.js:162-232` applies the calculated position:
+
+```javascript
+function playTransmisionExacta() {
+    if (currentPlaylist.length === 0) return;
+    
+    const posicion = calcularPosicionExacta();
+    const track = posicion.track;
+    
+    console.log(`🎵 Conectando a transmisión:`);
+    console.log(`   📀 "${track.file}"`);
+    console.log(`   🎯 Empezando en segundo: ${posicion.segundoEnCancion}`);
+    
+    // DETECTAR PLATAFORMAS EXTERNAS Y FORZAR SINCRONIZACIÓN
+    if (window.location.hostname.includes('mytuner-radio.com') || 
+        window.location.hostname.includes('radios-argentinas.org')) {
+        console.log('🔧 PLATAFORMA EXTERNA DETECTADA - Forzando sincronización');
+        audioPlayer.currentTime = posicion.segundoEnCancion;
+        audioPlayer.src = track.path + '?t=' + Date.now(); // Evitar cache
+    }
+    
+    // Configurar audio
+    audioPlayer.src = track.path;
+    audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600);
+    
+    console.log(`   🔊 Tiempo establecido: ${posicion.segundoEnCancion}s`);
+    
+    // Intentar reproducir inmediatamente
+    const playPromise = audioPlayer.play();
+    
+    if (playPromise !== undefined) {
+        playPromise.catch(e => {
+            console.error('❌ Error al reproducir:', e.name);
+            setTimeout(() => {
+                audioPlayer.play().catch(() => {
+                    setTimeout(siguienteCancion, 1000);
+                });
+            }, 300);
+        });
+    }
+}
+```
+
+<Note>
+The system includes special handling for external platforms that may interfere with synchronization.
+</Note>
+
+## Maintaining synchronization
+
+The player includes a verification step in the `onloadedmetadata` event from `radio-zara.js:206-210`:
+
+```javascript
+audioPlayer.onloadedmetadata = function() {
+    if (Math.abs(audioPlayer.currentTime - posicion.segundoEnCancion) > 2) {
+        audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600);
+    }
+};
+```
+
+This ensures that if the browser fails to seek to the correct position, it will be corrected once the audio metadata loads.
+
+## Error handling
+
+The system includes error recovery from `radio-zara.js:218-231`:
+
+```javascript
+audioPlayer.onerror = function() {
+    console.error('❌ Error de audio');
+    errorCount++;
+    
+    if (errorCount >= MAX_ERRORS) {
+        console.error('🚨 Demasiados errores - Deteniendo');
+        isPlaying = false;
+        updatePlayButton();
+        errorCount = 0;
+        return;
+    }
+    
+    setTimeout(siguienteCancion, 1000);
+};
+```
+
+<Info>
+After 3 consecutive errors, the player stops automatically to prevent infinite retry loops.
+</Info>
+
+## Alternative synchronization approach
+
+The codebase also includes an alternative approach in `app.js:36-47` that syncs based on daily time:
+
+```javascript
+function getCurrentTrackInfo() {
+    if (currentPlaylist.length === 0) return { trackIndex: 0, secondInTrack: 0 };
+    
+    const ahora = new Date();
+    const segundosHoy = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
+    const duracionTotal = currentPlaylist.length * 240; // 4 min por canción
+    const segundosEnCiclo = segundosHoy % duracionTotal;
+    const trackIndex = Math.floor(segundosEnCiclo / 240) % currentPlaylist.length;
+    const secondInTrack = segundosEnCiclo % 240;
+    
+    return { trackIndex, secondInTrack };
+}
+```
+
+This approach resets daily rather than using a fixed start timestamp, which can be useful for daily program schedules.

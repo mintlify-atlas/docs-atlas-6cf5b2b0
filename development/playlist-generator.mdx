@@ -1,0 +1,286 @@
+---
+title: Playlist generator
+description: How to use the Python playlist generator script to manage your music library
+---
+
+The `playlist_generator.py` script automates the creation of playlist.json files for each radio program. It scans music directories, extracts metadata, and generates synchronized playlists.
+
+## Overview
+
+The playlist generator reads program configuration, scans audio files in each program folder, calculates durations, and outputs JSON playlist files that the radio player uses for synchronized playback.
+
+**Key features:**
+- Automatic duration detection using mutagen library
+- Fixed randomization seed for consistent playback across all listeners
+- Support for MP3 and M4A audio formats
+- Per-program playlist generation
+
+## Requirements
+
+The script requires Python 3 and the mutagen library for audio metadata extraction:
+
+```bash
+pip install mutagen
+```
+
+## Usage
+
+### Basic usage
+
+Run the script from your project root directory:
+
+```bash
+python3 playlist_generator.py
+```
+
+The script will:
+1. Read the program configuration from `music/_programs.json`
+2. Scan each program folder for audio files
+3. Generate a `playlist.json` file in each program directory
+4. Display progress and statistics
+
+### Example output
+
+```
+============================================================
+GENERADOR DE PLAYLIST POR PROGRAMA - Teletext Radio
+============================================================
+📋 Programas encontrados: 5
+
+🎵 Procesando: Radio 404
+  📁 Radio 404: 12 archivos
+    ✅ Generado: radio404/playlist.json
+       ⏱️  Duración total: 2h 15m
+
+🎵 Procesando: Archivo txt
+  📁 Archivo txt: 45 archivos
+    ✅ Generado: archivotxt/playlist.json
+       ⏱️  Duración total: 5h 30m
+
+============================================================
+✅ GENERACIÓN COMPLETADA
+============================================================
+```
+
+## How it works
+
+### Configuration file
+
+The script expects a configuration file at `music/_programs.json` with this structure:
+
+```json
+{
+  "programs": [
+    {
+      "name": "Radio 404",
+      "folder": "radio404",
+      "schedule": "01:00-06:00"
+    },
+    {
+      "name": "Archivo txt",
+      "folder": "archivotxt",
+      "schedule": "06:00-12:00"
+    }
+  ]
+}
+```
+
+<Note>
+If `_programs.json` doesn't exist, the script will display an error and exit. Create this file before running the generator.
+</Note>
+
+### Duration detection
+
+The script uses two methods to determine track duration:
+
+```python
+def obtener_duracion_real(mp3_path):
+    """Obtiene duración real en segundos"""
+    try:
+        audio = mutagen.File(mp3_path)
+        if audio is not None:
+            return int(audio.info.length)
+    except:
+        pass
+    # Estimación por tamaño (1MB ≈ 1 minuto)
+    size_mb = mp3_path.stat().st_size / (1024 * 1024)
+    return int(size_mb * 60) if size_mb > 0 else 300
+```
+
+1. **Primary method:** Uses mutagen to read actual audio duration from file metadata
+2. **Fallback method:** Estimates duration based on file size (1MB ≈ 1 minute)
+
+### Randomization seed
+
+The script uses a fixed seed for shuffling to ensure all listeners hear the same track order:
+
+```python
+SEMILLA_FIJA = 42  # Fixed random seed per program
+
+# Orden aleatorio FIJO por programa
+random.seed(SEMILLA_FIJA + hash(programa["folder"]) % 1000)
+random.shuffle(tracks)
+```
+
+This creates deterministic "randomness" - the shuffle order is fixed but different for each program.
+
+### Output format
+
+The generated `playlist.json` file contains:
+
+```json
+{
+  "program": "Radio 404",
+  "folder": "radio404",
+  "schedule": "01:00-06:00",
+  "seed": 42,
+  "total_duration": 8100,
+  "total_tracks": 12,
+  "tracks": [
+    {
+      "file": "track01.mp3",
+      "duration": 245,
+      "path": "music/radio404/track01.mp3"
+    }
+  ]
+}
+```
+
+## Code walkthrough
+
+<Steps>
+
+<Step title="Load configuration">
+The script starts by loading `music/_programs.json` to get the list of programs and their folders:
+
+```python
+with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+    config = json.load(f)
+```
+</Step>
+
+<Step title="Scan for audio files">
+For each program, it searches for supported audio formats:
+
+```python
+archivos_mp3 = []
+for ext in ['*.mp3', '*.MP3', '*.m4a', '*.M4A']:
+    archivos_mp3.extend(carpeta.glob(ext))
+```
+</Step>
+
+<Step title="Extract metadata">
+Each file is processed to extract duration and build track objects:
+
+```python
+for mp3 in archivos_mp3:
+    duracion = obtener_duracion_real(mp3)
+    tracks.append({
+        "file": mp3.name,
+        "duration": duracion,
+        "path": f"music/{programa['folder']}/{mp3.name}"
+    })
+    duracion_total += duracion
+```
+</Step>
+
+<Step title="Shuffle with fixed seed">
+Tracks are shuffled using a deterministic seed:
+
+```python
+random.seed(SEMILLA_FIJA + hash(programa["folder"]) % 1000)
+random.shuffle(tracks)
+```
+</Step>
+
+<Step title="Write playlist.json">
+Finally, the playlist is saved to the program folder:
+
+```python
+output_path = carpeta / "playlist.json"
+with open(output_path, 'w', encoding='utf-8') as f:
+    json.dump(playlist_data, f, indent=2, ensure_ascii=False)
+```
+</Step>
+
+</Steps>
+
+## Customization
+
+### Change the randomization seed
+
+Modify the seed constant to change the shuffle order:
+
+```python
+SEMILLA_FIJA = 42  # Change this number
+```
+
+### Add support for new audio formats
+
+Extend the file extension list in playlist_generator.py:42:
+
+```python
+for ext in ['*.mp3', '*.MP3', '*.m4a', '*.M4A', '*.ogg', '*.OGG']:
+    archivos_mp3.extend(carpeta.glob(ext))
+```
+
+### Adjust duration estimation
+
+Change the fallback calculation in playlist_generator.py:29:
+
+```python
+# Current: 1MB = 1 minute
+return int(size_mb * 60)
+
+# For higher bitrate files: 1MB = 45 seconds
+return int(size_mb * 45)
+```
+
+## Troubleshooting
+
+<Warning>
+If the script fails with "No module named 'mutagen'", install the dependency:
+
+```bash
+pip install mutagen
+```
+</Warning>
+
+### Common issues
+
+**No files found in program folder**
+
+```
+❌ No hay archivos de audio en 'radio404'
+```
+
+Solution: Verify the folder exists under `music/` and contains MP3 or M4A files.
+
+**Configuration file missing**
+
+```
+❌ ERROR: No existe music/_programs.json
+```
+
+Solution: Create the configuration file with your program definitions.
+
+**Permission errors**
+
+Solution: Ensure the script has write permissions to the music subdirectories:
+
+```bash
+chmod -R u+w music/
+```
+
+## Integration with workflow
+
+Run the playlist generator whenever you:
+
+1. Add new music files to any program folder
+2. Remove or rename tracks
+3. Create a new program/folder
+4. Want to change the shuffle order (by modifying the seed)
+
+<Note>
+Consider adding the generator to your deployment workflow or git pre-commit hook to ensure playlists are always up to date.
+</Note>

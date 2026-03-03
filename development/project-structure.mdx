@@ -1,0 +1,133 @@
+---
+title: Project structure
+description: Overview of the Teletext Radio file and folder organization
+---
+
+Teletext Radio follows a simple, flat file structure designed for easy deployment and maintenance. All source files are contained in a single directory with organized subdirectories for media assets.
+
+## Directory tree
+
+Here's the complete project structure:
+
+```
+teletext-radio/
+├── index.html              # Main HTML page
+├── styles.css              # All CSS styling
+├── radio-zara.js           # Playlist mode player logic
+├── radio-zara-live.js      # Live streaming mode player
+├── app.js                  # Additional application logic
+├── stream.php              # Server streaming endpoint
+├── playlist_generator.py   # Python script for playlist generation
+├── playlist.json           # Main playlist file
+├── Chomsky.otf            # Custom Chomsky font
+├── favicon.png            # Site favicon
+├── ff.jpg                 # Background image
+├── social-preview.jpg     # Social media preview image
+├── CNAME                  # Custom domain configuration
+├── LICENSE.md             # License file
+├── README.md              # Project documentation
+├── music/                 # Music library organized by program
+│   ├── archivotxt/
+│   ├── especialestxt/
+│   ├── internetarchive/
+│   ├── radio404/
+│   ├── telesoft/
+│   └── teletext/
+├── novedades/             # News and announcements images
+│   ├── evento1.png
+│   ├── evento2.jpg
+│   └── evento3.png
+├── sponsors/              # Sponsor logos
+│   └── globo.png
+└── .github/
+    └── workflows/         # GitHub Actions for deployment
+```
+
+## Core files
+
+### HTML and styles
+
+- **index.html** - Single-page application containing all markup
+- **styles.css** - Complete styling including responsive design, animations, and custom components
+
+### JavaScript
+
+- **radio-zara.js** - Main player for synchronized playlist mode (default)
+- **radio-zara-live.js** - Alternative player for live streaming via BUTT
+- **app.js** - Supporting application logic
+
+<Note>
+Switch between playlist and live modes by commenting/uncommenting the appropriate script tag in index.html:200-204
+</Note>
+
+### Playlist management
+
+- **playlist_generator.py** - Python script that generates playlist.json files from music directories
+- **playlist.json** - Main playlist file with track paths and metadata
+- **playlist_[program].json** - Individual program playlists (floppydisk, internetarchive, radio404, telesoft, madrugadatxt)
+
+### Assets
+
+- **Chomsky.otf** - Custom teletext-style font used for branding (styles.css:25-31)
+- **ff.jpg** - Background image (styles.css:13)
+- **favicon.png** - Browser tab icon
+- **social-preview.jpg** - Open Graph preview for social media sharing
+
+## Music directory structure
+
+The `music/` folder contains subdirectories for each radio program:
+
+```
+music/
+├── archivotxt/        # "Archivo txt" morning show (06:00-12:00)
+├── especialestxt/     # "Especiales txt" weekend programming
+├── internetarchive/   # "Internet Archive" night show (20:00-01:00)
+├── radio404/          # "Radio 404" early morning (01:00-06:00)
+├── telesoft/          # "Telesoft" afternoon show (12:00-16:00)
+└── teletext/          # General station content
+```
+
+<Note>
+Each program folder should contain MP3 or M4A audio files. The playlist generator will scan these folders and create corresponding playlist.json files.
+</Note>
+
+## Deployment files
+
+- **CNAME** - Contains custom domain name for GitHub Pages
+- **.github/workflows/** - GitHub Actions for automated deployment
+- **stream.php** - Server-side streaming endpoint (if using PHP backend)
+
+## File organization best practices
+
+<Steps>
+
+<Step title="Keep music organized by program">
+Store audio files in their corresponding program folders under `music/`. This makes playlist generation automatic and schedule-aware.
+</Step>
+
+<Step title="Use consistent naming">
+Name audio files descriptively without special characters. Use lowercase and hyphens for consistency.
+</Step>
+
+<Step title="Optimize assets">
+Compress images and audio files before adding them to the project to reduce bandwidth and load times.
+</Step>
+
+<Step title="Update playlists after changes">
+Run `playlist_generator.py` whenever you add or remove music files to regenerate the playlist.json files.
+</Step>
+
+</Steps>
+
+## Static site deployment
+
+Teletext Radio is designed as a static site that can be deployed to:
+
+- GitHub Pages (recommended)
+- Netlify
+- Vercel
+- Any static hosting provider
+
+<Warning>
+The music files are stored directly in the repository. For large music libraries, consider using Git LFS (Large File Storage) or hosting audio files on a separate CDN.
+</Warning>

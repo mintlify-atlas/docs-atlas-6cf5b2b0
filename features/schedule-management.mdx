@@ -1,0 +1,194 @@
+---
+title: Schedule management
+description: Learn how Teletext Radio manages daily programming schedules and time-based show transitions
+---
+
+Teletext Radio uses a schedule management system to organize programming into time-based blocks throughout the day. The system handles overlapping schedules, special programming, and timezone conversions.
+
+## Schedule data structure
+
+The schedule is defined in the `scheduleData` object from `radio-zara.js:40-49`:
+
+```javascript
+const scheduleData = {
+    "schedules": [
+        {"name": "madrugada", "displayName": "Radio 404", "start": "01:00", "end": "06:00"},
+        {"name": "mañana", "displayName": "Archivo txt", "start": "06:00", "end": "12:00"},
+        {"name": "tarde", "displayName": "Telesoft", "start": "12:00", "end": "16:00"},
+        {"name": "mediatarde", "displayName": "Floppy Disk", "start": "16:00", "end": "20:00"},
+        {"name": "noche", "displayName": "Internet Archive", "start": "20:00", "end": "01:00"},
+        {"name": "especial", "displayName": "Especiales txt", "start": "22:00", "end": "00:00"}
+    ]
+};
+```
+
+### Schedule properties
+
+Each schedule entry includes:
+
+- **name**: Internal identifier for the program
+- **displayName**: Human-readable name shown to users
+- **start**: Start time in 24-hour format (HH:MM)
+- **end**: End time in 24-hour format (HH:MM)
+
+<Note>
+The "noche" program ends at "01:00" (next day), and "especial" overlaps with "noche" on specific days.
+</Note>
+
+## Program metadata
+
+Additional program information is stored in separate objects from `radio-zara.js:22-38`:
+
+```javascript
+const programNames = {
+    "madrugada": "Radio 404",
+    "mañana": "Archivo txt", 
+    "tarde": "Telesoft",
+    "mediatarde": "Floppy Disk",
+    "noche": "Internet Archive",
+    "especial": "Especiales txt"
+};
+
+const programDescriptions = {
+    "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día.",
+    "mañana": "Programa matutino con energía y ritmos para comenzar el día.",
+    "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde.",
+    "mediatarde": "Transición hacia la noche con sonidos más atmosféricos.",
+    "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día.",
+    "especial": "Programación especial viernes y sábados de 22:00 a 00:00."
+};
+```
+
+## Timezone handling
+
+All schedule times are in Argentina time (UTC-3). The `getArgentinaTime()` function from `radio-zara.js:52-58` converts local time:
+
+```javascript
+function getArgentinaTime() {
+    const now = new Date();
+    const argentinaOffset = -3 * 60;
+    const localOffset = now.getTimezoneOffset();
+    const offsetDiff = argentinaOffset + localOffset;
+    return new Date(now.getTime() + offsetDiff * 60000);
+}
+```
+
+## Getting current schedule
+
+The `getCurrentSchedule()` function from `radio-zara.js:67-87` determines which program should be playing:
+
+```javascript
+function getCurrentSchedule() {
+    const now = getArgentinaTime();
+    const day = now.getDay();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
+    for (const schedule of scheduleData.schedules) {
+        if (schedule.name === "especial" && day !== 5 && day !== 6) continue;
+        
+        const start = schedule.start.split(':').map(Number);
+        const end = schedule.end.split(':').map(Number);
+        const startTime = start[0] * 60 + start[1];
+        let endTime = end[0] * 60 + end[1];
+        
+        if (endTime < startTime) endTime += 24 * 60;
+        const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
+        if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
+            return schedule;
+        }
+    }
+    return scheduleData.schedules[0];
+}
+```
+
+### Schedule matching logic
+
+<Tabs>
+  <Tab title="Special programming">
+    The "especial" program only runs on Fridays (day 5) and Saturdays (day 6):
+    
+    ```javascript
+    if (schedule.name === "especial" && day !== 5 && day !== 6) continue;
+    ```
+  </Tab>
+  
+  <Tab title="Midnight crossover">
+    Programs that cross midnight (like "noche") are handled by adding 24 hours to the end time:
+    
+    ```javascript
+    if (endTime < startTime) endTime += 24 * 60;
+    const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
+    ```
+  </Tab>
+  
+  <Tab title="Fallback">
+    If no schedule matches (shouldn't happen), it defaults to the first schedule:
+    
+    ```javascript
+    return scheduleData.schedules[0];
+    ```
+  </Tab>
+</Tabs>
+
+## Displaying schedule information
+
+The `updateDisplayInfo()` function from `radio-zara.js:89-95` updates the UI with current program info:
+
+```javascript
+function updateDisplayInfo() {
+    const schedule = getCurrentSchedule();
+    const displayName = schedule.displayName || programNames[schedule.name];
+    currentShow.textContent = displayName;
+    currentTimeName.textContent = displayName;
+    currentTimeRange.textContent = `${formatTimeForDisplay(schedule.start)} - ${formatTimeForDisplay(schedule.end)}`;
+}
+```
+
+## Time formatting
+
+Times are converted from 24-hour to 12-hour format with AM/PM using `formatTimeForDisplay()` from `radio-zara.js:60-65`:
+
+```javascript
+function formatTimeForDisplay(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+```
+
+## Schedule grid generation
+
+The `generateScheduleCards()` function from `radio-zara.js:97-112` creates the visual schedule display:
+
+```javascript
+function generateScheduleCards() {
+    if (!scheduleGrid) return;
+    scheduleGrid.innerHTML = '';
+    scheduleData.schedules.forEach(schedule => {
+        const card = document.createElement('div');
+        card.className = 'schedule-card';
+        const displayName = schedule.displayName || programNames[schedule.name];
+        const description = programDescriptions[schedule.name] || '';
+        card.innerHTML = `
+            <div class="schedule-time">${formatTimeForDisplay(schedule.start)} - ${formatTimeForDisplay(schedule.end)}</div>
+            <div class="schedule-name">${displayName}</div>
+            <div class="schedule-desc">${description}</div>
+        `;
+        scheduleGrid.appendChild(card);
+    });
+}
+```
+
+## Auto-refresh
+
+The schedule display updates automatically every minute from the initialization in `radio-zara.js:336`:
+
+```javascript
+setInterval(updateDisplayInfo, 60000);
+updateDisplayInfo();
+```
+
+<Info>
+The initial call to `updateDisplayInfo()` ensures the schedule shows immediately on page load, while the interval keeps it updated.
+</Info>

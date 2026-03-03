@@ -1,0 +1,401 @@
+---
+title: External platforms
+description: Deploy synchronized streams to external radio platforms using stream.php
+---
+
+Teletext Radio includes `stream.php` to provide a synchronized audio stream for external platforms like radio directories, mobile apps, and third-party players.
+
+## What is stream.php?
+
+`stream.php` is a PHP script that serves a synchronized MP3 stream. Unlike the JavaScript-based client synchronization, this server-side approach allows platforms without JavaScript support to receive the same synchronized broadcast.
+
+<Info>
+Every request to `stream.php` calculates the current position in the playlist and serves audio from the exact same moment, ensuring all listeners hear identical content.
+</Info>
+
+## How synchronization works
+
+The script uses time-based synchronization to determine which track to play and at which position:
+
+```php
+// Calculate current song (4 minutes = 240 seconds per track)
+$timestamp = time();
+$segundosDia = ($timestamp % 86400); // Seconds since midnight
+$indice = floor($segundosDia / 240) % 20;
+$segundoEnCancion = $segundosDia % 240;
+```
+
+From `stream.php:32-36`:
+
+<Steps>
+  <Step title="Get current Unix timestamp">
+    `$timestamp = time()` gets the current server time
+  </Step>
+  
+  <Step title="Calculate seconds since midnight">
+    `$timestamp % 86400` gives the number of seconds elapsed today (86400 = seconds in a day)
+  </Step>
+  
+  <Step title="Determine track index">
+    `floor($segundosDia / 240) % 20` calculates which of the 20 tracks should be playing
+  </Step>
+  
+  <Step title="Find position within track">
+    `$segundosDia % 240` determines how many seconds into the current track we should be
+  </Step>
+</Steps>
+
+## Full stream.php implementation
+
+Here's the complete script from `stream.php:1-57`:
+
+```php
+<?php
+// stream.php - Stream sincronizado para plataformas externas
+header('Content-Type: audio/mpeg');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Expose-Headers: *');
+
+// Tus 20 canciones (AJUSTÁ LAS RUTAS)
+$playlist = [
+    '/music/especialestxt/cancion1.mp3',
+    '/music/especialestxt/cancion2.mp3',
+    '/music/especialestxt/cancion3.mp3',
+    '/music/especialestxt/cancion4.mp3',
+    '/music/especialestxt/cancion5.mp3',
+    '/music/especialestxt/cancion6.mp3',
+    '/music/especialestxt/cancion7.mp3',
+    '/music/especialestxt/cancion8.mp3',
+    '/music/especialestxt/cancion9.mp3',
+    '/music/especialestxt/cancion10.mp3',
+    '/music/especialestxt/cancion11.mp3',
+    '/music/especialestxt/cancion12.mp3',
+    '/music/especialestxt/cancion13.mp3',
+    '/music/especialestxt/cancion14.mp3',
+    '/music/especialestxt/cancion15.mp3',
+    '/music/especialestxt/cancion16.mp3',
+    '/music/especialestxt/cancion17.mp3',
+    '/music/especialestxt/cancion18.mp3',
+    '/music/especialestxt/cancion19.mp3',
+    '/music/especialestxt/cancion20.mp3'
+];
+
+// Calcular canción actual (cada 4 minutos = 240 segundos)
+$timestamp = time();
+$segundosDia = ($timestamp % 86400);
+$indice = floor($segundosDia / 240) % 20;
+$segundoEnCancion = $segundosDia % 240;
+
+$rutaArchivo = $_SERVER['DOCUMENT_ROOT'] . $playlist[$indice];
+
+// Verificar que el archivo existe
+if (!file_exists($rutaArchivo)) {
+    header("HTTP/1.0 404 Not Found");
+    exit;
+}
+
+// Enviar el archivo MP3 desde el segundo correcto
+$fp = fopen($rutaArchivo, 'rb');
+fseek($fp, 128 * $segundoEnCancion); // 128 KBps
+
+while (!feof($fp) && connection_status() == 0) {
+    echo fread($fp, 8192);
+    flush();
+    usleep(80000); // Controlar bitrate
+}
+
+fclose($fp);
+?>
+```
+
+## HTTP headers explained
+
+The script sends critical headers in `stream.php:3-6`:
+
+```php
+header('Content-Type: audio/mpeg');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Expose-Headers: *');
+```
+
+<Note>
+**Content-Type: audio/mpeg** - Tells browsers and players this is an MP3 stream
+</Note>
+
+<Note>
+**Cache-Control** - Prevents caching so each request gets the current synchronized position
+</Note>
+
+<Note>
+**Access-Control-Allow-Origin: *** - Enables CORS for cross-origin requests from web players
+</Note>
+
+<Note>
+**Access-Control-Expose-Headers: *** - Allows JavaScript to read all response headers
+</Note>
+
+## Byte offset calculation
+
+The script seeks to the correct position in the MP3 file using byte offsets in `stream.php:48`:
+
+```php
+fseek($fp, 128 * $segundoEnCancion); // 128 KBps
+```
+
+This calculation assumes:
+- MP3 bitrate: 128 Kbps (kilobits per second)
+- Bytes per second: 128 Kbps ÷ 8 = 16 KB/s = 16,000 bytes/s
+- Approximation: `128 * seconds` (simplified from 16,000)
+
+<Warning>
+This byte offset calculation is approximate. For precise seeking, you'd need to parse MP3 frame headers. However, this approximation works well for constant bitrate (CBR) MP3 files.
+</Warning>
+
+## Streaming loop
+
+The script continuously sends audio data in `stream.php:50-54`:
+
+```php
+while (!feof($fp) && connection_status() == 0) {
+    echo fread($fp, 8192);
+    flush();
+    usleep(80000); // Controlar bitrate
+}
+```
+
+<Steps>
+  <Step title="Read 8KB chunks">
+    `fread($fp, 8192)` reads 8,192 bytes at a time
+  </Step>
+  
+  <Step title="Send to client">
+    `echo` outputs the chunk to the HTTP response stream
+  </Step>
+  
+  <Step title="Flush buffer">
+    `flush()` ensures data is sent immediately, not buffered
+  </Step>
+  
+  <Step title="Rate limiting">
+    `usleep(80000)` pauses for 80ms to control streaming speed and prevent overwhelming clients
+  </Step>
+</Steps>
+
+## Configuring your playlist
+
+Update the `$playlist` array in `stream.php:9-30` with your audio files:
+
+```php
+$playlist = [
+    '/music/madrugada/track1.mp3',
+    '/music/madrugada/track2.mp3',
+    '/music/mañana/track1.mp3',
+    // Add more tracks...
+];
+```
+
+<Info>
+Paths are relative to `$_SERVER['DOCUMENT_ROOT']`, which is your web server's root directory.
+</Info>
+
+### Adjusting track duration
+
+If your tracks are not 4 minutes (240 seconds), change the duration in line 32:
+
+```php
+// For 3-minute tracks:
+$indice = floor($segundosDia / 180) % 20;
+$segundoEnCancion = $segundosDia % 180;
+
+// For 5-minute tracks:
+$indice = floor($segundosDia / 300) % 20;
+$segundoEnCancion = $segundosDia % 300;
+```
+
+### Adjusting playlist size
+
+The script uses `% 20` to loop through 20 tracks. If you have a different number:
+
+```php
+// For 50 tracks:
+$indice = floor($segundosDia / 240) % 50;
+
+// For 10 tracks:
+$indice = floor($segundosDia / 240) % 10;
+```
+
+## Deployment requirements
+
+<Warning>
+`stream.php` requires a PHP-enabled web server. Static hosting platforms (GitHub Pages, Netlify, Vercel) cannot run PHP.
+</Warning>
+
+Use one of these hosting options:
+
+### Shared hosting with PHP
+
+Most web hosting providers support PHP:
+
+1. Upload `stream.php` and your music files via FTP
+2. Ensure music files are in the paths specified in `$playlist`
+3. Access via `https://yourdomain.com/stream.php`
+
+### VPS or dedicated server
+
+Install Apache/Nginx with PHP:
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install apache2 php libapache2-mod-php
+
+# Enable mod_headers for CORS
+sudo a2enmod headers
+sudo systemctl restart apache2
+```
+
+### Docker container
+
+Create a `Dockerfile`:
+
+```dockerfile
+FROM php:8.2-apache
+
+RUN a2enmod headers rewrite
+
+COPY . /var/www/html/
+RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80
+```
+
+Build and run:
+
+```bash
+docker build -t teletext-radio .
+docker run -p 80:80 teletext-radio
+```
+
+## Integrating with external platforms
+
+Provide the stream URL to radio directories:
+
+```
+https://yourdomain.com/stream.php
+```
+
+Most platforms accept MP3 stream URLs in formats like:
+
+- **myTuner Radio**: Submit via their web portal
+- **TuneIn**: Requires station registration
+- **Radio.net**: Direct stream URL submission
+- **Radios Argentinas**: Listed in the detection logic (`radio-zara.js:174`)
+
+## Testing the stream
+
+Verify synchronization is working:
+
+<Steps>
+  <Step title="Open stream in VLC">
+    `File > Open Network Stream` → Enter `https://yourdomain.com/stream.php`
+  </Step>
+  
+  <Step title="Open in multiple browser tabs">
+    Navigate to the stream URL in several tabs simultaneously
+  </Step>
+  
+  <Step title="Verify synchronization">
+    All instances should play the exact same audio at the same moment
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Stream won't play
+
+Check these common issues:
+
+```bash
+# Verify PHP is installed
+php -v
+
+# Check file permissions
+ls -la /path/to/music/
+
+# Test the script directly
+curl -I https://yourdomain.com/stream.php
+```
+
+Expected response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: audio/mpeg
+Cache-Control: no-cache, no-store, must-revalidate
+Access-Control-Allow-Origin: *
+```
+
+### Audio is out of sync
+
+Ensure server time is accurate:
+
+```bash
+# Check current time
+date
+
+# Sync with NTP
+sudo ntpdate pool.ntp.org
+```
+
+### Files not found (404)
+
+Verify paths in the `$playlist` array:
+
+```php
+// Add debug output before line 38
+echo "Looking for: " . $rutaArchivo . "\n";
+var_dump(file_exists($rutaArchivo));
+exit;
+```
+
+### Stream stutters or buffers
+
+Adjust the streaming parameters:
+
+```php
+// Increase chunk size for better performance
+echo fread($fp, 16384); // Instead of 8192
+
+// Adjust sleep time
+usleep(160000); // Instead of 80000
+```
+
+## Advanced: Variable track lengths
+
+For playlists with different track durations, replace the synchronization logic:
+
+```php
+$trackDurations = [240, 180, 300, 240, 195]; // seconds per track
+
+$totalSeconds = 0;
+$currentTrackIndex = 0;
+$secondInTrack = 0;
+
+foreach ($trackDurations as $i => $duration) {
+    if ($segundosDia < $totalSeconds + $duration) {
+        $currentTrackIndex = $i;
+        $secondInTrack = $segundosDia - $totalSeconds;
+        break;
+    }
+    $totalSeconds += $duration;
+}
+
+$rutaArchivo = $_SERVER['DOCUMENT_ROOT'] . $playlist[$currentTrackIndex];
+fseek($fp, 128 * $secondInTrack);
+```
+
+<Info>
+This approach maintains synchronization even when tracks have varying lengths.
+</Info>

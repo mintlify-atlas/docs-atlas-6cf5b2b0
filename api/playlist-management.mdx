@@ -1,0 +1,177 @@
+---
+title: Playlist management
+description: Functions for calculating synchronized playback position across all listeners
+---
+
+## calcularPosicionExacta()
+
+Calculates the exact track and playback position that should be playing at the current moment, ensuring all listeners are synchronized to the same global transmission timeline.
+
+```javascript
+function calcularPosicionExacta()
+```
+
+### Return value
+
+Returns an object with the following properties:
+
+<ParamField path="trackIndex" type="number">
+  Zero-based index of the track that should be playing
+</ParamField>
+
+<ParamField path="segundoEnCancion" type="number">
+  Second position within the current track (0-179)
+</ParamField>
+
+<ParamField path="track" type="object">
+  Track object from `currentPlaylist` with `path` and `file` properties
+</ParamField>
+
+### Side effects
+
+- Updates global `currentTrackIndex` variable
+- Logs synchronization information to console
+
+### Usage example
+
+```javascript
+const posicion = calcularPosicionExacta();
+const track = posicion.track;
+
+audioPlayer.src = track.path;
+audioPlayer.currentTime = posicion.segundoEnCancion;
+```
+
+### Synchronization algorithm
+
+The function uses a fixed transmission start time to ensure all listeners are synchronized:
+
+```javascript
+const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+const ahora = new Date();
+
+const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
+const segundosPorCancion = 180; // 3 minutes per track
+const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
+const posicionEnPlaylist = segundosTranscurridos % segundosTotalPlaylist;
+
+currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
+const segundoEnCancion = posicionEnPlaylist % segundosPorCancion;
+```
+
+### Key parameters
+
+- **Transmission start**: January 1, 2025 at 03:00:00 UTC
+- **Track duration**: 180 seconds (3 minutes) per track
+- **Playlist looping**: Playlist repeats indefinitely
+
+### Console output example
+
+```
+🎯 SINCRONIZACIÓN EXACTA:
+   📻 Canción: #42/150
+   ⏱️  Segundo: 127s
+   🔗 Todos escuchan lo mismo
+```
+
+## Playlist loading logic
+
+The playlist loading system ensures synchronized playback across all listeners.
+
+### Playlist structure
+
+The `playlist.json` file contains an array of track paths:
+
+```json
+{
+  "tracks": [
+    "audio/track1.mp3",
+    "audio/track2.mp3",
+    "audio/track3.mp3"
+  ]
+}
+```
+
+### Track object format
+
+Each track in `currentPlaylist` is transformed into an object:
+
+```javascript
+{
+    path: "audio/track1.mp3",
+    file: "track1.mp3"
+}
+```
+
+### Loading flow
+
+1. `loadPlaylist()` is called when user clicks play (if not already loaded)
+2. Fetches `playlist.json` via HTTP
+3. Maps each track path to an object with `path` and `file` properties
+4. Sets `playlistLoaded = true`
+5. Logs total track count to console
+
+### Error handling
+
+If playlist loading fails:
+
+```javascript
+try {
+    // ... fetch and parse playlist
+} catch (error) {
+    console.error('Error:', error);
+    currentPlaylist = [];
+    currentTrackIndex = 0;
+}
+```
+
+The system resets to an empty state, preventing playback attempts with invalid data.
+
+### Global playlist state
+
+The playlist management system relies on these global variables:
+
+<ParamField path="currentPlaylist" type="array">
+  Array of track objects loaded from `playlist.json`
+</ParamField>
+
+<ParamField path="currentTrackIndex" type="number">
+  Zero-based index of the currently playing track
+</ParamField>
+
+<ParamField path="playlistLoaded" type="boolean">
+  Prevents redundant playlist fetches
+</ParamField>
+
+### Synchronization guarantee
+
+Because all calculations are based on:
+
+- A fixed transmission start time (2025-01-01T03:00:00Z)
+- A fixed track duration (180 seconds)
+- The same playlist order
+
+All listeners who connect at the same moment will hear exactly the same content at the same position, regardless of their location or when they started listening.
+
+### Alternative implementation (app.js)
+
+The `app.js` file contains an alternative synchronization approach based on daily cycles:
+
+```javascript
+function getCurrentTrackInfo() {
+    const ahora = new Date();
+    const segundosHoy = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
+    const duracionTotal = currentPlaylist.length * 240; // 4 min per track
+    const segundosEnCiclo = segundosHoy % duracionTotal;
+    const trackIndex = Math.floor(segundosEnCiclo / 240) % currentPlaylist.length;
+    const secondInTrack = segundosEnCiclo % 240;
+    
+    return { trackIndex, secondInTrack };
+}
+```
+
+This version:
+
+- Synchronizes based on time-of-day rather than absolute timestamp
+- Uses 240 seconds (4 minutes) per track instead of 180 seconds
+- Resets daily instead of running continuously from a fixed start date

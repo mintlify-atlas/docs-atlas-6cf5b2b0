@@ -1,97 +1,132 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction
+description: Welcome to Teletext Radio - A synchronized 24/7 online radio streaming platform built with JavaScript
 ---
 
-## Setting up
+# Teletext Radio
 
-Get your documentation site up and running in minutes.
+Teletext Radio is a synchronized 24/7 online radio streaming platform that ensures all listeners hear the exact same content at the same time. Built entirely with vanilla JavaScript, it provides a seamless streaming experience with time-synchronized playback across all connected clients.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## What makes Teletext Radio unique?
 
-## Make it yours
+Teletext Radio implements a sophisticated synchronization system that calculates the exact position in the playlist based on elapsed time since transmission started. This means everyone listening to the radio hears the same track at the same second, creating a truly shared listening experience.
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="bolt" href="/quickstart">
+    Get your radio streaming in under 5 minutes with our quick setup guide
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Installation" icon="download" href="/installation">
+    Complete installation instructions and configuration details
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Time synchronization" icon="clock" href="#synchronization">
+    Learn how the synchronized playback system works
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Schedule system" icon="calendar" href="#schedule">
+    Understand the daily programming schedule feature
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Key features
 
-Everything you need to create world-class documentation.
+### Synchronized playback
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+The radio uses a deterministic algorithm to ensure all listeners are perfectly synchronized. By calculating elapsed time from a fixed transmission start date, the system determines exactly which track should be playing and at what timestamp.
 
-## Need inspiration?
+```javascript
+function calcularPosicionExacta() {
+    const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+    const ahora = new Date();
+    
+    const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
+    const segundosPorCancion = 180;
+    const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
+    const posicionEnPlaylist = segundosTranscurridos % segundosTotalPlaylist;
+    
+    currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
+    const segundoEnCancion = posicionEnPlaylist % segundosPorCancion;
+    
+    return {
+        trackIndex: currentTrackIndex,
+        segundoEnCancion: segundoEnCancion,
+        track: currentPlaylist[currentTrackIndex]
+    };
+}
+```
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+### Dynamic schedule management
+
+Teletext Radio features a 24/7 programming schedule with different shows throughout the day. The schedule automatically updates based on Argentina time (UTC-3) and displays the current program.
+
+**Daily schedule:**
+- **Radio 404** - 01:00 to 06:00 - Atmospheric and experimental sounds
+- **Archivo txt** - 06:00 to 12:00 - Morning energy and rhythms
+- **Telesoft** - 12:00 to 16:00 - Varied afternoon selections
+- **Floppy Disk** - 16:00 to 20:00 - Evening atmospheric transitions
+- **Internet Archive** - 20:00 to 01:00 - Extended night sessions
+- **Especiales txt** - 22:00 to 00:00 (Friday & Saturday) - Special weekend programming
+
+### Playlist-based streaming
+
+The platform loads tracks from a `playlist.json` file, making it easy to update your music library without touching the code:
+
+```json
+{ "tracks": [
+  "music/andresnewforu.mp3",
+  "music/archivotxt/anaoxacontrolo.mp3",
+  "music/archivotxt/bizarretriangule.mp3"
+] }
+```
+
+### Responsive player interface
+
+The fixed player stays at the top of the page and displays:
+- Station branding with custom font (Chomsky)
+- Live status indicator with pulsing animation
+- Current show name
+- Play/pause controls
+- Share button to copy the radio URL
+
+<Note>
+The player interface is fully responsive and works seamlessly on desktop, tablet, and mobile devices.
+</Note>
+
+## Technology stack
+
+Teletext Radio is built with:
+
+- **Vanilla JavaScript** - No frameworks, pure JavaScript
+- **HTML5 Audio API** - Native browser audio playback
+- **CSS3** - Modern responsive styling with backdrop filters and animations
+- **JSON** - Simple playlist and schedule configuration
+
+## Use cases
+
+<CardGroup cols={2}>
+  <Card title="Independent radio stations" icon="radio">
+    Launch your own online radio with synchronized playback for all listeners
+  </Card>
+  <Card title="Music communities" icon="users">
+    Create a shared listening experience where everyone hears the same thing
+  </Card>
+  <Card title="Event streaming" icon="calendar-days">
+    Stream scheduled programming for events or special broadcasts
+  </Card>
+  <Card title="Learning projects" icon="graduation-cap">
+    Study synchronization algorithms and audio streaming implementations
+  </Card>
+</CardGroup>
+
+<Warning>
+This is an experimental development project. Any audio content used must comply with copyright laws and licensing requirements in your jurisdiction. The platform is designed to work with appropriately licensed content or public domain material.
+</Warning>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Set up your radio in minutes
+  </Card>
+  <Card title="Installation guide" icon="book" href="/installation">
+    Detailed setup and configuration
+  </Card>
+</CardGroup>

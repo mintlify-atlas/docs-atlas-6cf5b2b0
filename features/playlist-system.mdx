@@ -1,0 +1,227 @@
+---
+title: Playlist system
+description: Understand the playlist.json structure and how Teletext Radio manages track playback
+---
+
+Teletext Radio uses a JSON-based playlist system to define and manage the music library. The playlist is loaded dynamically and processed to create a synchronized playback queue.
+
+## Playlist file structure
+
+The playlist is defined in `playlist.json` as a simple array of track paths:
+
+```json
+{ "tracks": [
+  "music/andresnewforu.mp3",
+  "music/archivotxt/anaoxacontrolo.mp3",
+  "music/archivotxt/bizarretriangule.mp3",
+  "music/archivotxt/bluelovemix.mp3",
+  "music/archivotxt/cantochmeanymore.mp3",
+  "music/archivotxt/cantyousee.mp3",
+  ...
+] }
+```
+
+### Track organization
+
+Tracks are organized in subdirectories:
+
+- `music/` - Main music directory
+- `music/archivotxt/` - Archive text collection
+- `music/especialestxt/` - Special programming tracks
+- `music/internetarchive/` - Internet Archive collection
+- `music/teletext/` - Teletext-specific tracks
+
+<Info>
+The playlist contains 128 tracks, providing over 6 hours of continuous music before repeating.
+</Info>
+
+## Loading the playlist
+
+The `loadPlaylist()` function from `radio-zara.js:115-136` fetches and processes the playlist:
+
+```javascript
+async function loadPlaylist() {
+    if (playlistLoaded) return;
+    
+    try {
+        console.log('📻 Cargando playlist...');
+        const response = await fetch('playlist.json');
+        const data = await response.json();
+        
+        currentPlaylist = data.tracks.map(track => ({
+            path: track,
+            file: track.split('/').pop()
+        }));
+        
+        playlistLoaded = true;
+        console.log(`📻 Playlist cargada: ${currentPlaylist.length} canciones`);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        currentPlaylist = [];
+        currentTrackIndex = 0;
+    }
+}
+```
+
+### Playlist processing
+
+Each track is transformed into an object with two properties:
+
+<Tabs>
+  <Tab title="path">
+    The full path to the audio file:
+    ```javascript
+    path: "music/archivotxt/anaoxacontrolo.mp3"
+    ```
+  </Tab>
+  
+  <Tab title="file">
+    Just the filename extracted from the path:
+    ```javascript
+    file: "anaoxacontrolo.mp3"
+    ```
+    
+    This is extracted using:
+    ```javascript
+    file: track.split('/').pop()
+    ```
+  </Tab>
+</Tabs>
+
+## Playlist state management
+
+The playlist system maintains several state variables from `radio-zara.js:14-19`:
+
+```javascript
+let isPlaying = false;
+let currentPlaylist = [];
+let currentTrackIndex = 0;
+let playlistLoaded = false;
+let errorCount = 0;
+const MAX_ERRORS = 3;
+```
+
+### State variables
+
+- **isPlaying**: Whether audio is currently playing
+- **currentPlaylist**: Processed array of track objects
+- **currentTrackIndex**: Index of the currently playing track
+- **playlistLoaded**: Prevents re-loading the playlist
+- **errorCount**: Tracks consecutive playback errors
+- **MAX_ERRORS**: Maximum errors before stopping playback
+
+## Track selection
+
+Track selection is handled by the synchronization algorithm rather than sequential playback. The `calcularPosicionExacta()` function determines which track should be playing:
+
+```javascript
+currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
+```
+
+This ensures:
+- All listeners hear the same track
+- The playlist loops continuously
+- Track selection is deterministic based on time
+
+## Next track logic
+
+The `siguienteCancion()` function from `radio-zara.js:234-281` handles track transitions:
+
+```javascript
+function siguienteCancion() {
+    if (currentPlaylist.length === 0) return;
+    
+    errorCount = 0;
+    currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+    const track = currentPlaylist[currentTrackIndex];
+    
+    console.log(`⏭️ Siguiente canción: #${currentTrackIndex + 1} (${track.file})`);
+    
+    // Limpiar eventos
+    audioPlayer.onloadedmetadata = null;
+    audioPlayer.onerror = null;
+    audioPlayer.onended = null;
+    
+    audioPlayer.src = track.path;
+    audioPlayer.currentTime = 0;
+    
+    if (isPlaying) {
+        const playPromise = audioPlayer.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.error('❌ Error:', e.name);
+                setTimeout(siguienteCancion, 1000);
+            });
+        }
+    }
+}
+```
+
+<Note>
+The modulo operator (`%`) ensures the playlist loops seamlessly when reaching the end.
+</Note>
+
+## Playlist initialization
+
+The playlist is loaded during app initialization from `radio-zara.js:330-342`:
+
+```javascript
+async function init() {
+    console.log('🚀 Radio Zara - Versión Final');
+    console.log('🎯 Sincronización exacta por segundo');
+    
+    await loadPlaylist();
+    generateScheduleCards();
+    setInterval(updateDisplayInfo, 60000);
+    updateDisplayInfo();
+    
+    console.log('✅ Radio lista');
+}
+
+init();
+```
+
+## Error handling
+
+The playlist system includes robust error handling:
+
+```javascript
+audioPlayer.onerror = function() {
+    console.error('❌ Error de audio');
+    errorCount++;
+    
+    if (errorCount >= MAX_ERRORS) {
+        console.error('🚨 Demasiados errores - Deteniendo');
+        isPlaying = false;
+        updatePlayButton();
+        errorCount = 0;
+        return;
+    }
+    
+    setTimeout(siguienteCancion, 1000);
+};
+```
+
+### Error recovery
+
+When an error occurs:
+1. Error count increments
+2. If under MAX_ERRORS, skip to next track after 1 second
+3. If MAX_ERRORS reached, stop playback and reset
+
+<Info>
+The error counter resets to 0 on successful track completion, allowing recovery from temporary network issues.
+</Info>
+
+## Track duration assumptions
+
+The synchronization system assumes each track is 180 seconds (3 minutes):
+
+```javascript
+const segundosPorCancion = 180;
+const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
+```
+
+This fixed duration enables time-based synchronization without needing to query actual audio file durations.

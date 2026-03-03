@@ -1,0 +1,155 @@
+---
+title: Audio player functions
+description: Core audio playback and synchronization functions for the radio stream
+---
+
+## loadPlaylist()
+
+Asynchronously loads the playlist from `playlist.json` and initializes the global playlist state.
+
+```javascript
+async function loadPlaylist()
+```
+
+### Return value
+
+Returns a Promise that resolves when the playlist is loaded. Does not return a value.
+
+### Side effects
+
+- Sets `playlistLoaded` to `true`
+- Populates `currentPlaylist` array with track objects containing `path` and `file` properties
+- Logs playlist length to console
+- On error, resets `currentPlaylist` to empty array and `currentTrackIndex` to 0
+
+### Usage example
+
+```javascript
+if (!playlistLoaded) {
+    await loadPlaylist();
+}
+```
+
+The function fetches the playlist JSON and transforms each track path into an object:
+
+```javascript
+currentPlaylist = data.tracks.map(track => ({
+    path: track,
+    file: track.split('/').pop()
+}));
+```
+
+## playTransmisionExacta()
+
+Starts synchronized playback at the exact position in the global transmission timeline. This ensures all listeners hear the same content at the same time.
+
+```javascript
+function playTransmisionExacta()
+```
+
+### Return value
+
+Does not return a value.
+
+### Side effects
+
+- Calls `calcularPosicionExacta()` to determine current track and position
+- Sets `audioPlayer.src` to the current track path
+- Sets `audioPlayer.currentTime` to the calculated second within the track
+- Attempts to play the audio
+- Registers event handlers for `onloadedmetadata`, `onended`, and `onerror`
+- Increments `errorCount` on errors
+- Stops playback if `errorCount` reaches `MAX_ERRORS` (3)
+
+### Usage example
+
+```javascript
+isPlaying = true;
+setTimeout(() => {
+    playTransmisionExacta();
+}, 0);
+```
+
+The function includes special handling for external platforms:
+
+```javascript
+if (window.location.hostname.includes('mytuner-radio.com') || 
+    window.location.hostname.includes('radios-argentinas.org')) {
+    audioPlayer.currentTime = posicion.segundoEnCancion;
+    audioPlayer.src = track.path + '?t=' + Date.now();
+}
+```
+
+### Error handling
+
+The function implements automatic retry logic:
+
+- On play failure, retries after 300ms
+- On audio error, increments error counter and tries next track after 1 second
+- After 3 consecutive errors, stops playback and resets
+
+## siguienteCancion()
+
+Advances to the next track in the playlist and starts playback from the beginning.
+
+```javascript
+function siguienteCancion()
+```
+
+### Return value
+
+Does not return a value.
+
+### Side effects
+
+- Resets `errorCount` to 0
+- Increments `currentTrackIndex` (wraps around to 0 at playlist end)
+- Clears previous audio event handlers
+- Sets `audioPlayer.src` to next track path
+- Sets `audioPlayer.currentTime` to 0
+- Starts playback if `isPlaying` is `true`
+- Registers new event handlers for `onerror` and `onended`
+
+### Usage example
+
+```javascript
+audioPlayer.onended = function() {
+    errorCount = 0;
+    siguienteCancion();
+};
+```
+
+The function automatically loops through the playlist:
+
+```javascript
+currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+const track = currentPlaylist[currentTrackIndex];
+```
+
+## Global state
+
+These functions interact with shared global variables:
+
+<ParamField path="isPlaying" type="boolean">
+  Indicates whether the radio is currently playing
+</ParamField>
+
+<ParamField path="currentPlaylist" type="array">
+  Array of track objects with `path` and `file` properties
+</ParamField>
+
+<ParamField path="currentTrackIndex" type="number">
+  Zero-based index of the currently playing track
+</ParamField>
+
+<ParamField path="playlistLoaded" type="boolean">
+  Indicates whether the playlist has been successfully loaded
+</ParamField>
+
+<ParamField path="errorCount" type="number">
+  Tracks consecutive playback errors for automatic shutdown
+</ParamField>
+
+<ParamField path="audioPlayer" type="HTMLAudioElement">
+  Reference to the audio player DOM element (`#radioPlayer`)
+</ParamField>

@@ -1,0 +1,327 @@
+---
+title: Customization
+description: How to customize radio shows, branding, and program schedules
+---
+
+Teletext Radio's programming, branding, and content can be customized by editing configuration objects in the JavaScript files and updating HTML content.
+
+## Program names and schedules
+
+All program configuration is managed in `radio-zara.js`. You can modify program names, descriptions, and time slots.
+
+### Program names
+
+Edit the `programNames` object in radio-zara.js:22-29:
+
+```javascript
+const programNames = {
+    "madrugada": "Radio 404",
+    "mañana": "Archivo txt", 
+    "tarde": "Telesoft",
+    "mediatarde": "Floppy Disk",
+    "noche": "Internet Archive",
+    "especial": "Especiales txt"
+};
+```
+
+<Note>
+The object keys ("madrugada", "mañana", etc.) are internal IDs that should match your music folder names. The values are the display names shown to users.
+</Note>
+
+### Program descriptions
+
+Customize the descriptions shown on schedule cards in radio-zara.js:31-38:
+
+```javascript
+const programDescriptions = {
+    "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día.",
+    "mañana": "Programa matutino con energía y ritmos para comenzar el día.",
+    "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde.",
+    "mediatarde": "Transición hacia la noche con sonidos más atmosféricos.",
+    "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día.",
+    "especial": "Programación especial viernes y sábados de 22:00 a 00:00."
+};
+```
+
+### Schedule configuration
+
+Define when each program airs by modifying the `scheduleData` object in radio-zara.js:40-49:
+
+```javascript
+const scheduleData = {
+    "schedules": [
+        {"name": "madrugada", "displayName": "Radio 404", "start": "01:00", "end": "06:00"},
+        {"name": "mañana", "displayName": "Archivo txt", "start": "06:00", "end": "12:00"},
+        {"name": "tarde", "displayName": "Telesoft", "start": "12:00", "end": "16:00"},
+        {"name": "mediatarde", "displayName": "Floppy Disk", "start": "16:00", "end": "20:00"},
+        {"name": "noche", "displayName": "Internet Archive", "start": "20:00", "end": "01:00"},
+        {"name": "especial", "displayName": "Especiales txt", "start": "22:00", "end": "00:00"}
+    ]
+};
+```
+
+<Steps>
+
+<Step title="Set program ID">
+The `name` field should match a key in `programNames` and your music folder name.
+</Step>
+
+<Step title="Set display name">
+The `displayName` field appears in the schedule grid and player interface.
+</Step>
+
+<Step title="Define time range">
+Use 24-hour format for `start` and `end` times (e.g., "22:00" for 10 PM).
+</Step>
+
+<Step title="Handle overnight shows">
+For programs that cross midnight (like "noche": "20:00" to "01:00"), the code automatically handles the day transition.
+</Step>
+
+</Steps>
+
+## Adding a new program
+
+<Steps>
+
+<Step title="Create music folder">
+Create a new folder under `music/` with your program name:
+
+```bash
+mkdir music/mynewshow
+```
+</Step>
+
+<Step title="Add to program names">
+Add an entry to `programNames`:
+
+```javascript
+const programNames = {
+    // ... existing programs
+    "mynewshow": "My New Show"
+};
+```
+</Step>
+
+<Step title="Add description">
+Define the program description:
+
+```javascript
+const programDescriptions = {
+    // ... existing descriptions
+    "mynewshow": "An exciting new program with curated music."
+};
+```
+</Step>
+
+<Step title="Add to schedule">
+Insert the schedule entry:
+
+```javascript
+const scheduleData = {
+    "schedules": [
+        // ... existing schedules
+        {"name": "mynewshow", "displayName": "My New Show", "start": "14:00", "end": "18:00"}
+    ]
+};
+```
+</Step>
+
+<Step title="Add music files">
+Copy MP3 or M4A files into `music/mynewshow/`.
+</Step>
+
+<Step title="Generate playlist">
+Run the playlist generator:
+
+```bash
+python3 playlist_generator.py
+```
+</Step>
+
+</Steps>
+
+## Station branding
+
+### Logo and title
+
+Update the station logo in index.html:37:
+
+```html
+<a href="#" class="station-logo">TXT</a>
+```
+
+Change the main hero title in index.html:64:
+
+```html
+<h1 class="hero-title">Teletext Radio</h1>
+```
+
+### Tagline and description
+
+Modify the subtitle in index.html:65:
+
+```html
+<p class="hero-subtitle">Txt es una Radio Online creada por amantes de la música para amantes de la música.</p>
+```
+
+### Page title and metadata
+
+Update SEO metadata in the `<head>` section of index.html:
+
+```html
+<title>Teletext Radio</title>
+<meta property="og:title" content="Teletext Radio">
+<meta property="og:description" content="Patagonia Argentina">
+<meta name="twitter:title" content="Teletext Radio">
+```
+
+## Content sections
+
+### News and announcements
+
+Edit the "Novedades" cards in index.html:91-117:
+
+```html
+<div class="novedad-card">
+    <div class="novedad-imagen">
+        <img src="novedades/evento1.png" alt="Orto Galeria" loading="lazy">
+    </div>
+    <div class="novedad-texto">
+        <p>Your announcement text here.</p>
+    </div>
+</div>
+```
+
+<Note>
+Place new images in the `novedades/` folder and reference them in the `src` attribute.
+</Note>
+
+### About section
+
+Customize the station information in index.html:125-127:
+
+```html
+<p class="info-text">
+    Teletext Radio is an independent platform that transmits music 24 hours a day, 
+    based in Patagonia Argentina. Our goal is to offer a unique listening experience.
+</p>
+```
+
+### Support link
+
+Update the support link in index.html:129:
+
+```html
+<a href='https://cafecito.app/teletext' class="cafecito-link" target="_blank" rel="noopener">
+    <span>🌹 Support this project on Cafecito</span>
+</a>
+```
+
+## Sponsors
+
+Add or modify sponsor entries in index.html:166-186:
+
+```html
+<div class="sponsor-item">
+    <a href="https://www.instagram.com/yoursponsor/" target="_blank" rel="noopener" class="sponsor-link">
+        <img src="sponsors/logo.png" class="sponsor-logo" alt="Sponsor Name">
+    </a>
+    <div class="sponsor-name">Sponsor Name</div>
+</div>
+```
+
+<Steps>
+
+<Step title="Add logo image">
+Place the sponsor logo in the `sponsors/` folder (recommended size: 200x200px).
+</Step>
+
+<Step title="Update link and name">
+Set the sponsor URL and display name.
+</Step>
+
+<Step title="Add sponsor block">
+Copy the entire `sponsor-item` div and modify for each sponsor.
+</Step>
+
+</Steps>
+
+## Footer links
+
+Customize footer navigation and social links in index.html:140-160:
+
+```html
+<div class="footer-column">
+    <h3 class="footer-title">Teletext Radio</h3>
+    <ul class="footer-links">
+        <li><a href="#now-playing">En Vivo</a></li>
+        <li><a href="#schedule">Programación</a></li>
+        <li><a href="#collections">Colecciones</a></li>
+    </ul>
+</div>
+
+<div class="footer-column">
+    <h3 class="footer-title">Contacto</h3>
+    <ul class="footer-links">
+        <li><a href="https://www.instagram.com/teletextradio/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="mailto:rteletextradio@gmail.com">Email</a></li>
+    </ul>
+</div>
+```
+
+## Copyright notice
+
+Update the copyright text in index.html:190-192:
+
+```html
+<div class="copyright-content">
+    © 2026 Teletextlab. Patagonia Argentina. All rights reserved.
+</div>
+```
+
+## Special programs
+
+The "especial" program only plays on specific days. This is controlled in radio-zara.js:73:
+
+```javascript
+if (schedule.name === "especial" && day !== 5 && day !== 6) continue;
+```
+
+This makes the special program only active on Fridays (5) and Saturdays (6).
+
+<Warning>
+Days are zero-indexed: Sunday = 0, Monday = 1, ..., Saturday = 6
+</Warning>
+
+To change which days the special program airs:
+
+```javascript
+// Only on Sundays:
+if (schedule.name === "especial" && day !== 0) continue;
+
+// Fridays, Saturdays, and Sundays:
+if (schedule.name === "especial" && day !== 5 && day !== 6 && day !== 0) continue;
+```
+
+## Time zone configuration
+
+The radio uses Argentina time (UTC-3). The conversion is handled in radio-zara.js:52-58:
+
+```javascript
+function getArgentinaTime() {
+    const now = new Date();
+    const argentinaOffset = -3 * 60;  // Argentina is UTC-3
+    const localOffset = now.getTimezoneOffset();
+    const offsetDiff = argentinaOffset + localOffset;
+    return new Date(now.getTime() + offsetDiff * 60000);
+}
+```
+
+To use a different time zone, change the offset:
+
+```javascript
+const argentinaOffset = -5 * 60;  // EST (UTC-5)
+const argentinaOffset = 1 * 60;   // CET (UTC+1)
+const argentinaOffset = 0;        // UTC
+```
